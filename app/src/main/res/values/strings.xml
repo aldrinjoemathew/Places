@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">Places</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="app_tag_line">Find places around you</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="new_to_places">New to places?</string>
+    <string name="signup">Sign Up</string>
+    <string name="firstname">Firstname</string>
+    <string name="lastname">Lastname</string>
+    <string name="phone_number">Phone number</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="error">Error</string>
+    <string name="error_response">THERE WAS AN ERROR</string>
+    <string name="error_email_empty">Email must not be empty</string>
+    <string name="error_email_invalid">Inavlid Email ID</string>
+    <string name="error_duplicate_email">Duplicate Email ID</string>
+    <string name="error_first_name_empty">First name must not be empty</string>
+    <string name="error_last_name_empty">Second name must not be empty</string>
+    <string name="error_phone_number_empty">Phone number must not be empty</string>
+    <string name="error_phone_number_invalid">Invalid phonenumber</string>
+    <string name="error_password_empty">Password must not be empty</string>
+    <string name="error_confirm_pass_empty">Confirm password must not be empty</string>
+    <string name="error_confirm_pass_wrong">Enter the same password as above</string>
+    <string name="error_password_wrong">Wrong password</string>
+    <string name="error_password_wrong_format">Password should start with character, should have a number, an upper case letter and a lower case letter</string>
+    <string name="error_password_length_invalid">Password should be between 8 and 16 chars</string>
+    <string name="success">Success</string>
+    <string name="error_user_not_exists">User is not registered with Places.</string>
+    <string name="reset_password">Reset password</string>
+    <string name="submit">Submit</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirmation">OK</string>
+    <string name="reset_password_dialog_message">Confirm reset password?</string>
+    <string name="password_changed_dialog_message">New password has been sent to your Email</string>
+    <string name="profile_updated_dialog_message">Your profile has been successfully updated</string>
+    <string name="alphabets">ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="numbers">0123456789</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="my_profile">Profile</string>
+    <string name="logout">Logout</string>
+    <string name="temporary_password">Temporary password</string>
+    <string name="new_password">New password</string>
+    <string name="passcode">Passcode</string>
+    <string name="password_changed">Your password has been changed</string>
+    <string name="title_activity_main3">Main3Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_user_home">UserHomeActivity</string>
+    <string name="title_activity_userhome">UserhomeActivity</string>
+    <string name="google_places_web_key">AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao</string>
+</resources>

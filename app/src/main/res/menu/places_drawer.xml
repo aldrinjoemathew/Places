@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_nearby_places"
+            android:icon="@drawable/ic_near_me_black_18dp"
+            android:title="Nearby places" />
+        <item
+            android:id="@+id/nav_fav_places"
+            android:icon="@drawable/ic_star_black_18dp"
+            android:title="Favourite places" />
+        <item
+            android:id="@+id/nav_find_service"
+            android:icon="@drawable/ic_menu_send"
+            android:title="Find a service" />
+    </group>
+
+    <item android:title="Account">
+        <menu>
+            <item
+                android:id="@+id/nav_profile"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="Profile" />
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@drawable/ic_menu_share"
+                android:title="Logout" />
+        </menu>
+    </item>
+</menu>
