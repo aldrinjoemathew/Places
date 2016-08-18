@@ -6,12 +6,14 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 
 import com.example.aldrin.places.Activities.ChangePasswordActivity;
 import com.example.aldrin.places.Activities.LoginActivity;
 import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -22,7 +24,6 @@ import static android.content.Context.NOTIFICATION_SERVICE;
  */
 
 public class UserManager {
-    // Shared Preferences reference
     SharedPreferences mPreferences;
     SharedPreferences.Editor mPrefEditor;
     Context mContext;
@@ -60,10 +61,10 @@ public class UserManager {
         mPrefEditor.putString(KEY_LOGGED_IN_EMAIL, null);
         mPrefEditor.commit();
         // After logout redirect user to Login Activity
-        Intent i = new Intent(mContext, LoginActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        mContext.startActivity(i);
+        Intent loginIntent = new Intent(mContext, LoginActivity.class);
+        loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(loginIntent);
     }
 
     /**
@@ -82,6 +83,13 @@ public class UserManager {
         return mPreferences.getString(KEY_LOGGED_IN_EMAIL, null);
     }
 
+    public String getSearchRadius(String email) {
+        String userDetailsJson = mPreferences.getString(email,null);
+        Gson gson = new Gson();
+        UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
+        return userInfo.getmSearchRadius();
+    }
+
     /**
      * Create a new tag in shared pref with Email ID as key.
      * Insert the user info converted to JSON string as the value.
@@ -89,6 +97,7 @@ public class UserManager {
      */
     public void createNewAccount(UserInformation newUser){
         newUser.setmConfirmPassword(null);
+        newUser.setmSearchRadius(mContext.getString(R.string.default_search_radius));
         Gson gson = new Gson();
         String json = gson.toJson(newUser);
         mPrefEditor.putString(newUser.getmEmail(),json);
@@ -118,6 +127,23 @@ public class UserManager {
         return true;
     }
 
+    public void changeProfilePic(String email, Uri uriProfilePic) {
+        String detailsJson = mPreferences.getString(email,null);
+        Gson gson = new Gson();
+        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
+        userInfo.setmImageUri(uriProfilePic.toString());
+        String userDetails = gson.toJson(userInfo);
+        mPrefEditor.putString(email,userDetails);
+        mPrefEditor.commit();
+    }
+
+    public Uri getProfilePic(String email) {
+        String detailsJson = mPreferences.getString(email,null);
+        Gson gson = new Gson();
+        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
+        String uri =  userInfo.getmImageUri();
+        return Uri.parse(uri);
+    }
     /**
      * Email is used as the key value in sharedpref.
      * Entered email ID is checked against the list of key values in the sharedpref.
@@ -156,7 +182,7 @@ public class UserManager {
         Notification n  = new Notification.Builder(mContext)
                 .setContentTitle("Your password has been successfully changed")
                 .setContentText(newPassword)
-                .setSmallIcon(R.drawable.cast_ic_notification_small_icon)
+                .setSmallIcon(R.drawable.app_icon)
                 .setContentIntent(currentIntent)
                 .setAutoCancel(true).build();
         NotificationManager notificationManager =
@@ -190,23 +216,21 @@ public class UserManager {
      * @return the generated password.
      */
     private String generatePassword() {
-        // For starting character of password
         String alphabets = mContext.getString(R.string.alphabets) + mContext.getString(R.string.alphabets).toLowerCase();
-        char[] chars1 = alphabets.toCharArray();
-        // For remaining text of password
-        String passwordChars = alphabets + mContext.getString(R.string.numbers);
-        char[] chars2 = passwordChars.toCharArray();
-        StringBuilder sb = new StringBuilder();
+        char[] startingPasswordCharacterArray = alphabets.toCharArray();
+        String alphaNumerics = alphabets + mContext.getString(R.string.numbers);
+        char[] remainingPasswordCharacterArray = alphaNumerics.toCharArray();
+        StringBuilder passwordBuilder = new StringBuilder();
         Random random = new Random();
-        // Generates a random first character
-        char c1 = chars1[random.nextInt(chars1.length)];
-        sb.append(c1);
-        // Generates remaining characters of password
+        char firstPasswordCharacter =
+                startingPasswordCharacterArray[random.nextInt(startingPasswordCharacterArray.length)];
+        passwordBuilder.append(firstPasswordCharacter);
         for (int i = 0; i < 6; i++) {
-            c1 = chars2[random.nextInt(chars2.length)];
-            sb.append(c1);
+            firstPasswordCharacter =
+                    remainingPasswordCharacterArray[random.nextInt(remainingPasswordCharacterArray.length)];
+            passwordBuilder.append(firstPasswordCharacter);
         }
-        String newPassword = sb.toString();
+        String newPassword = passwordBuilder.toString();
         return newPassword;
     }
 
@@ -219,9 +243,9 @@ public class UserManager {
      */
     public HashMap<String, String> getUserDetails(String email) {
         HashMap<String, String> user = new HashMap<String, String>();
-        String detailsJson = mPreferences.getString(email,null);
+        String userDetailsJson = mPreferences.getString(email,null);
         Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
+        UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
         user.put(KEY_FIRST_NAME, userInfo.getmFirstName());
         user.put(KEY_LAST_NAME, userInfo.getmLastName());
         user.put(KEY_PHONE_NUMBER, userInfo.getmPhoneNumber());

@@ -9,6 +9,11 @@ import java.io.Serializable;
 public class Result implements Serializable {
     Geometry geometry;
     String name;
+    String place_id;
+
+    public String getPlace_id() {
+        return place_id;
+    }
 
     public String getName() {
         return name;

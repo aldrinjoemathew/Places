@@ -56,4 +56,11 @@
     <string name="title_activity_user_home">UserHomeActivity</string>
     <string name="title_activity_userhome">UserhomeActivity</string>
     <string name="google_places_web_key">AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao</string>
+    <string name="default_search_radius">500</string>
+    <string name="wrong_passcode">Wrong passcode</string>
+    <string name="search_url_part_1_location">https://maps.googleapis.com/maps/api/place/</string>
+    <string name="search_url_part_1">/json?location=</string>
+    <string name="nearby_search_url_part_2_radius"><![CDATA[&radius=]]></string>
+    <string name="nearby_search_url_part_3_type"><![CDATA[&type=]]></string>
+    <string name="search_url_part_4_key"><![CDATA[&key=]]></string>
 </resources>

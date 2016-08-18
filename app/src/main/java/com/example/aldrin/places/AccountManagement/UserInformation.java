@@ -1,5 +1,9 @@
 package com.example.aldrin.places.AccountManagement;
 
+import android.net.Uri;
+
+import java.net.URI;
+
 /**
  * A POJO class to retrieve user information from user and
  * to access user information.
@@ -12,6 +16,16 @@ public class UserInformation {
     private String mPhoneNumber;
     private String mPassword;
     private String mConfirmPassword;
+    private String mSearchRadius;
+    private String mImageUri;
+
+    public String getmImageUri() {
+        return mImageUri;
+    }
+
+    public void setmImageUri(String mImageUri) {
+        this.mImageUri = mImageUri;
+    }
 
     @Override
     public boolean equals(Object object) {
@@ -24,6 +38,13 @@ public class UserInformation {
             return true;
         }
         return false;
+    }
+    public String getmSearchRadius() {
+        return mSearchRadius;
+    }
+
+    public void setmSearchRadius(String mSearchRadius) {
+        this.mSearchRadius = mSearchRadius;
     }
 
     public String getmFirstName() {

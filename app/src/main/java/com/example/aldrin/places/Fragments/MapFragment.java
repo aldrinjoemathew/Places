@@ -1,5 +1,6 @@
 package com.example.aldrin.places.Fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -26,8 +27,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.util.List;
 
-import static com.example.aldrin.places.CustomClasses.NearbyLocSearch.locationDetailsAvailable;
-import static com.example.aldrin.places.CustomClasses.NearbyLocSearch.callbackBackgroundThreadCompleted;
+import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.locationDetailsAvailable;
+import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -36,9 +37,13 @@ public class MapFragment extends Fragment {
     private static final String KEY_LAT = "lat";
     private static final String KEY_LNG = "lng";
     private static final String KEY_JSON = "key";
+    private static final String TAG_ERROR = "error";
     private GoogleMap mGoogleMap;
     private LatLng mPosition;
     private GetFromJson mJsonResponse;
+    private Context mContext;
+    private SupportMapFragment mapFragment;
+    private Boolean loadMap;
 
     public MapFragment() {
         super();
@@ -53,11 +58,15 @@ public class MapFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        mContext = getContext();
+        mapFragment = (SupportMapFragment)
+                getChildFragmentManager().findFragmentById(R.id.map);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        loadMap = true;
         if (locationDetailsAvailable) {
             updateMap();
         } else {
@@ -65,18 +74,21 @@ public class MapFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        loadMap = false;
+    }
+
     /**
      * Set up google map with a dummy location if current LatLng value is not available.
-     * Check whether NearbyLocSearch has completed.
+     * Check whether NearbyServiceSearch has completed.
      * Call updateMap when background process is completed.
      */
     private void setUpMap() {
-        SupportMapFragment mapFragment = (SupportMapFragment)
-                getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap gMap) {
-                Log.e("error","inside onmapready");
                 mGoogleMap = gMap;
                 mPosition = new LatLng(8.5241,76.9366);
                 CameraPosition cameraPosition =
@@ -87,7 +99,9 @@ public class MapFragment extends Fragment {
         callbackBackgroundThreadCompleted = new Handler.Callback() {
             @Override
             public boolean handleMessage(Message message) {
-                updateMap();
+                if (loadMap) {
+                    updateMap();
+                }
                 return false;
             }
         };
@@ -135,14 +149,14 @@ public class MapFragment extends Fragment {
      */
     private void getDataFromCache() {
         try {
-            mJsonResponse = (GetFromJson) InternalStorage.readObject(getContext(), KEY_JSON);
-            String lat = (String) InternalStorage.readObject(getContext(), KEY_LAT);
-            String lng = (String) InternalStorage.readObject(getContext(), KEY_LNG);
+
+            Log.i("hbghdsjmc", "dskhjdfcdfsf");
+            mJsonResponse = (GetFromJson) InternalStorage.readObject(mContext, KEY_JSON);
+            String lat = (String) InternalStorage.readObject(mContext, KEY_LAT);
+            String lng = (String) InternalStorage.readObject(mContext, KEY_LNG);
             mPosition = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
-        } catch (IOException e) {
-            Log.e("error", e.getMessage());
-        } catch (ClassNotFoundException e) {
-            Log.e("error", e.getMessage());
+        } catch (IOException | ClassNotFoundException e) {
+            Log.e(TAG_ERROR, e.getMessage());
         }
     }
 }

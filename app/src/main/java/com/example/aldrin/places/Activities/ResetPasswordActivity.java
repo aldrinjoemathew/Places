@@ -1,7 +1,5 @@
 package com.example.aldrin.places.Activities;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -17,18 +15,20 @@ import android.widget.EditText;
 import com.example.aldrin.places.AccountManagement.UserManager;
 import com.example.aldrin.places.R;
 
+/**
+ * Activity to reset user's password.
+ */
 public class ResetPasswordActivity extends AppCompatActivity {
 
-    Button btnResetPassword;
-    Toolbar pageToolbar;
-    EditText etEmail;
-    TextInputLayout tilEmail;
+    private Button btnResetPassword;
+    private Toolbar pageToolbar;
+    private EditText etEmail;
+    private TextInputLayout tilEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reset_password);
-
         pageToolbar = (Toolbar)findViewById(R.id.toolbar_layout);
         setSupportActionBar(pageToolbar);
         this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);

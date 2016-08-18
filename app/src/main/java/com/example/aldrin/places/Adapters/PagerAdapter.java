@@ -25,7 +25,6 @@ public class PagerAdapter extends FragmentStatePagerAdapter {
      */
     @Override
     public Fragment getItem(int position) {
-        //Returning the current tabs
         switch (position) {
             case 0:
                 MapFragment tab1 = new MapFragment();

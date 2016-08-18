@@ -13,4 +13,5 @@
     <dimen name="layout_margin_top_button">40dp</dimen>
     <dimen name="padding_lr_button">30dp</dimen>
     <dimen name="height_tab_indicator">7dp</dimen>
+    <integer name="tab_count">3</integer>
 </resources>

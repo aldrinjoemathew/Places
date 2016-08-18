@@ -7,7 +7,8 @@ import android.os.Message;
 import android.util.Log;
 
 import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
-import com.google.android.gms.maps.model.LatLng;
+import com.example.aldrin.places.NearbyJsonClasses.Result;
+import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
@@ -17,18 +18,22 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by aldrin on 10/8/16.
+ * This is an AsyncTask used to get nearby services.
  */
-public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
+public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
 
     private HashMap<String, String> mData = new HashMap<String, String>();
     private Context mContext;
     private static final String KEY_JSON = "key";
-    private static final String KEY_LAT = "lat";
-    private static final String KEY_LNG = "lng";
-    public static Boolean bgProcessStarted = false;
+    private static final String TAG_ERROR = "error";
+    private static final String TAG_INFO = "info";
+    private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
+    private GetPlacesDetails getPlacesDetails;
+    public static Boolean bgProcessExists = false;
     public static Boolean locationDetailsAvailable = false;
     public static Handler.Callback callbackBackgroundThreadCompleted;
 
@@ -37,7 +42,7 @@ public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
      * @param context
      * @param data
      */
-    public NearbyLocSearch(Context context, HashMap<String, String> data) {
+    public NearbyServiceSearch(Context context, HashMap<String, String> data) {
         mData = data;
         mContext = context;
     }
@@ -46,7 +51,7 @@ public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
      * Letting know other activities that background process have started.
      */
     protected void onPreExecute() {
-        bgProcessStarted = true;
+        bgProcessExists = true;
         locationDetailsAvailable = false;
     }
 
@@ -58,19 +63,7 @@ public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
      */
     protected String doInBackground(Void... urls) {
         try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=");
-            sb.append(mData.get("lat"));
-            sb.append(',');
-            sb.append(mData.get("lng"));
-            sb.append("&radius=");
-            sb.append(mData.get("radius"));
-            sb.append("&type=");
-            sb.append(mData.get("type"));
-            sb.append("&key=");
-            sb.append(mData.get("key"));
-            URL url = new URL(sb.toString());
-            Log.i("url",url.toString());
+            URL url = new URL(buildUrl());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             try {
                 BufferedReader bufferedReader =
@@ -83,17 +76,17 @@ public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
                 bufferedReader.close();
                 return stringBuilder.toString();
             } catch (IOException e) {
-                Log.e("error", e.getMessage(), e);
+                Log.e(TAG_ERROR, e.getMessage(), e);
                 return null;
             }
             finally{
                 urlConnection.disconnect();
             }
         } catch (MalformedURLException e) {
-            Log.e("error", e.getMessage(), e);
+            Log.e(TAG_ERROR, e.getMessage(), e);
             return null;
         } catch(IOException e) {
-            Log.e("error", e.getMessage(), e);
+            Log.e(TAG_ERROR, e.getMessage(), e);
             return null;
         }
     }
@@ -105,25 +98,44 @@ public class NearbyLocSearch extends AsyncTask<Void, Void, String> {
      */
     protected void onPostExecute(String response) {
         if(response == null) {
-            response = "error";
-            Log.i("INFO", response);
+            Log.i(TAG_INFO, String.valueOf(R.string.error));
             return;
         }
-        Log.i("INFO", response);
-        LatLng position = new LatLng(Double.parseDouble(mData.get("lat")), Double.parseDouble(mData.get("lng")));
         Gson gson = new Gson();
         GetFromJson json = gson.fromJson(response, GetFromJson.class);
         try {
             InternalStorage.writeObject(mContext, KEY_JSON, json);
-            InternalStorage.writeObject(mContext, KEY_LAT, mData.get("lat"));
-            InternalStorage.writeObject(mContext, KEY_LNG, mData.get("lng"));
         } catch (IOException e) {
-            Log.e("error", e.getMessage());
+            Log.e(TAG_ERROR, e.getMessage());
         }
-        bgProcessStarted = false;
+        List<Result> results = json.getResults();
+        if (results != null) {
+            getPlacesDetails = new GetPlacesDetails(mContext, results);
+            getPlacesDetails.execute();
+        }
+        bgProcessExists = false;
         locationDetailsAvailable = true;
         Handler handler = new Handler(callbackBackgroundThreadCompleted);
         Message message = new Message();
         handler.sendMessage(message);
+    }
+
+    private String buildUrl() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("https://maps.googleapis.com/maps/api/place/");
+        sb.append(mData.get("service"));
+        sb.append("/json?location=");
+        sb.append(mData.get("lat"));
+        sb.append(',');
+        sb.append(mData.get("lng"));
+        sb.append("&radius=");
+        sb.append(mData.get("radius"));
+        sb.append("&type=");
+        sb.append(mData.get("type"));
+        sb.append("&key=");
+        sb.append(mContext.getString(R.string.google_places_web_key));
+        String url = sb.toString();
+        Log.i(TAG_INFO,url);
+        return url;
     }
 }

@@ -15,6 +15,11 @@ import com.example.aldrin.places.R;
 
 /**
  * A simple {@link Fragment} subclass.
+ * This fragment holds a tab layout.
+ * This fragment shows 3 tabs.
+ *  Map view
+ *  List view
+ *  Grid view
  */
 public class NearbyPlacesFragment extends Fragment {
 
@@ -39,11 +44,11 @@ public class NearbyPlacesFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_nearby_places, container, false);
+        mViewPager = (ViewPager) v.findViewById(R.id.pager);
+        TabLayout mTabLayout = (TabLayout) v.findViewById(R.id.tabLayout);
         mSectionsPagerAdapter = new PagerAdapter(
                 getChildFragmentManager(), 3);
-        TabLayout mTabLayout = (TabLayout) v.findViewById(R.id.tabLayout);
         mTabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
-        mViewPager = (ViewPager) v.findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mTabLayout.setupWithViewPager(mViewPager);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mTabLayout));

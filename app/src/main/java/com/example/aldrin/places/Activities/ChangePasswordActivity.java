@@ -26,6 +26,8 @@ public class ChangePasswordActivity extends AppCompatActivity {
     private UserManager mUserAccount;
     private Boolean mProceedWithUpdate;
     private Boolean mPasswordChanged;
+    private String mPasscode;
+    private Context mCurrentContext;
     private Button btnSubmit;
     private EditText etEmail;
     private EditText etPasscode;
@@ -35,15 +37,13 @@ public class ChangePasswordActivity extends AppCompatActivity {
     private TextInputLayout layoutPasscode;
     private TextInputLayout layoutPassword;
     private TextInputLayout layoutConfirmPassword;
-    private String mPasscode;
-    private Context mCurrentContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change_password);
         mCurrentContext = this;
-        mPasscode = getIntent().getStringExtra("passcode");
+        mPasscode = getIntent().getStringExtra(getString(R.string.passcode));
         bindXmlFields();
         btnSubmit.setOnClickListener(submit);
     }
@@ -77,7 +77,7 @@ public class ChangePasswordActivity extends AppCompatActivity {
                             })
                             .show();
                 } else {
-                    layoutPasscode.setError("Wrong passcode");
+                    layoutPasscode.setError(getString(R.string.wrong_passcode));
                     mProceedWithUpdate = false;
                 }
             }
