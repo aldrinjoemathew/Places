@@ -43,6 +43,11 @@
         <item name="android:layout_marginRight">@dimen/padding_lr_button</item>
     </style>
 
+    <style name="RatingBar" parent="Theme.AppCompat">
+        <item name="colorControlNormal">#ffffff</item>
+        <item name="colorControlActivated">#e99a06</item>
+    </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />

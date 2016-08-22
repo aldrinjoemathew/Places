@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Log;
 
 import com.example.aldrin.places.Activities.ChangePasswordActivity;
 import com.example.aldrin.places.Activities.LoginActivity;
@@ -35,6 +36,9 @@ public class UserManager {
     public static final String KEY_FIRST_NAME = "firstname";
     public static final String KEY_LAST_NAME = "lastname";
     public static final String KEY_PHONE_NUMBER = "phonenumber";
+    public static final String KEY_API_RESPONSE = "apiResponse";
+    public static final String KEY_CURRENT_LAT = "lat";
+    public static final String KEY_CURRENT_LNG = "lng";
 
     public UserManager(Context context) {
         mContext = context;
@@ -83,11 +87,50 @@ public class UserManager {
         return mPreferences.getString(KEY_LOGGED_IN_EMAIL, null);
     }
 
+    /**
+     * Return the user's current search radius.
+     * @param email
+     * @return
+     */
     public String getSearchRadius(String email) {
         String userDetailsJson = mPreferences.getString(email,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
         return userInfo.getmSearchRadius();
+    }
+
+    public void updateSearchRadius(String email, String radius) {
+        String detailsJson = mPreferences.getString(email,null);
+        Gson gson = new Gson();
+        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
+        userInfo.setmSearchRadius(radius);
+        String userDetails = gson.toJson(userInfo);
+        mPrefEditor.putString(email,userDetails);
+        mPrefEditor.commit();
+    }
+
+    public void updateApiResponse(String apiString) {
+        Log.i("1", "mhjchv");
+        mPrefEditor.putString(KEY_API_RESPONSE, apiString);
+        mPrefEditor.commit();
+    }
+
+    public void updateLocation(String lat, String lng) {
+        Log.i("2", "mhjchv");
+        mPrefEditor.putString(KEY_CURRENT_LAT, lat);
+        mPrefEditor.putString(KEY_CURRENT_LNG, lng);
+        mPrefEditor.commit();
+    }
+
+    public String[] getLocation() {
+        String[] loc = new String[2];
+        loc[0] = mPreferences.getString(KEY_CURRENT_LAT, null);
+        loc[1] = mPreferences.getString(KEY_CURRENT_LNG, null);
+        return loc;
+    }
+
+    public String getApiResponse() {
+        return mPreferences.getString(KEY_API_RESPONSE, null);
     }
 
     /**
@@ -127,6 +170,11 @@ public class UserManager {
         return true;
     }
 
+    /**
+     * Update the user's current profile picture.
+     * @param email
+     * @param uriProfilePic
+     */
     public void changeProfilePic(String email, Uri uriProfilePic) {
         String detailsJson = mPreferences.getString(email,null);
         Gson gson = new Gson();
@@ -137,6 +185,11 @@ public class UserManager {
         mPrefEditor.commit();
     }
 
+    /**
+     * Returns URI to user's current profile picture.
+     * @param email
+     * @return
+     */
     public Uri getProfilePic(String email) {
         String detailsJson = mPreferences.getString(email,null);
         Gson gson = new Gson();

@@ -38,8 +38,6 @@
     <string name="profile_updated_dialog_message">Your profile has been successfully updated</string>
     <string name="alphabets">ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="numbers">0123456789</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="my_profile">Profile</string>
     <string name="logout">Logout</string>
@@ -58,9 +56,7 @@
     <string name="google_places_web_key">AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao</string>
     <string name="default_search_radius">500</string>
     <string name="wrong_passcode">Wrong passcode</string>
-    <string name="search_url_part_1_location">https://maps.googleapis.com/maps/api/place/</string>
-    <string name="search_url_part_1">/json?location=</string>
-    <string name="nearby_search_url_part_2_radius"><![CDATA[&radius=]]></string>
-    <string name="nearby_search_url_part_3_type"><![CDATA[&type=]]></string>
-    <string name="search_url_part_4_key"><![CDATA[&key=]]></string>
+    <string name="open_now">Open now</string>
+    <string name="restaurant_name">Restaurant Name</string>
+    <string name="nearby_search_url"><![CDATA[https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%1$s,%2$s&radius=%3$s&type=%4$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
 </resources>

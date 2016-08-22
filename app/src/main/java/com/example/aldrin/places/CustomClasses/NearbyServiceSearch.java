@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import com.example.aldrin.places.AccountManagement.UserManager;
 import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
 import com.example.aldrin.places.NearbyJsonClasses.Result;
 import com.example.aldrin.places.R;
@@ -33,6 +34,8 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
     private static final String TAG_INFO = "info";
     private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
     private GetPlacesDetails getPlacesDetails;
+    private String mEmail;
+    private UserManager mUserManager;
     public static Boolean bgProcessExists = false;
     public static Boolean locationDetailsAvailable = false;
     public static Handler.Callback callbackBackgroundThreadCompleted;
@@ -42,9 +45,11 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
      * @param context
      * @param data
      */
-    public NearbyServiceSearch(Context context, HashMap<String, String> data) {
+    public NearbyServiceSearch(Context context, HashMap<String, String> data, String email) {
         mData = data;
         mContext = context;
+        mEmail = email;
+        mUserManager = new UserManager(mContext);
     }
 
     /**
@@ -101,18 +106,8 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
             Log.i(TAG_INFO, String.valueOf(R.string.error));
             return;
         }
-        Gson gson = new Gson();
-        GetFromJson json = gson.fromJson(response, GetFromJson.class);
-        try {
-            InternalStorage.writeObject(mContext, KEY_JSON, json);
-        } catch (IOException e) {
-            Log.e(TAG_ERROR, e.getMessage());
-        }
-        List<Result> results = json.getResults();
-        if (results != null) {
-            getPlacesDetails = new GetPlacesDetails(mContext, results);
-            getPlacesDetails.execute();
-        }
+        Log.i(TAG_INFO, response);
+        mUserManager.updateApiResponse(response);
         bgProcessExists = false;
         locationDetailsAvailable = true;
         Handler handler = new Handler(callbackBackgroundThreadCompleted);
@@ -120,21 +115,13 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
         handler.sendMessage(message);
     }
 
+    /**
+     * To generate and return the required API request.
+     * @return url
+     */
     private String buildUrl() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("https://maps.googleapis.com/maps/api/place/");
-        sb.append(mData.get("service"));
-        sb.append("/json?location=");
-        sb.append(mData.get("lat"));
-        sb.append(',');
-        sb.append(mData.get("lng"));
-        sb.append("&radius=");
-        sb.append(mData.get("radius"));
-        sb.append("&type=");
-        sb.append(mData.get("type"));
-        sb.append("&key=");
-        sb.append(mContext.getString(R.string.google_places_web_key));
-        String url = sb.toString();
+        String url = String.format(mContext.getString(R.string.nearby_search_url),
+                mData.get("lat"), mData.get("lng"), mData.get("radius"), mData.get("type"));
         Log.i(TAG_INFO,url);
         return url;
     }

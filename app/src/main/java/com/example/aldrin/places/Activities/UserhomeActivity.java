@@ -1,16 +1,15 @@
 package com.example.aldrin.places.Activities;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -22,7 +21,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
-import com.example.aldrin.places.CustomClasses.InternalStorage;
 import com.example.aldrin.places.Fragments.FavouritePlacesFragment;
 import com.example.aldrin.places.Fragments.NearbyPlacesFragment;
 import com.example.aldrin.places.CustomClasses.NearbyServiceSearch;
@@ -32,8 +30,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import java.io.IOException;
 import java.util.HashMap;
+
+import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
 
 public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -50,25 +49,30 @@ public class UserhomeActivity extends AppCompatActivity
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
     private UserManager mUserManager;
     private GoogleApiClient mGoogleApiClient;
+    private Location mCurrentLocation;
     private Location mLastLocation;
     private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
     private NearbyServiceSearch nearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
+    private Boolean mMapLoaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_userhome);
         setViewItems();
+
         imageViewProfile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
             }
         });
-        mLocationRequest = LocationRequest.create();
+        mLocationRequest = new LocationRequest();
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -85,16 +89,6 @@ public class UserhomeActivity extends AppCompatActivity
             Uri selectedImage = data.getData();
             mUserManager.changeProfilePic(mUserEmail, selectedImage);
             displayProfilePic();
-        }
-    }
-
-    private void displayProfilePic() {
-        Uri profileImage;
-        try {
-            profileImage = mUserManager.getProfilePic(mUserEmail);
-            imageViewProfile.setImageURI(profileImage);
-        } catch (NullPointerException e) {
-            Log.e(TAG_ERROR, e.toString());
         }
     }
 
@@ -128,13 +122,13 @@ public class UserhomeActivity extends AppCompatActivity
             return true;
         }
         int id = item.getItemId();
+        android.support.v4.app.FragmentTransaction fragmentTransaction = getSupportFragmentManager()
+                .beginTransaction();
         if (id == R.id.nav_nearby_places) {
-            getSupportFragmentManager()
-                    .beginTransaction()
+            fragmentTransaction
                     .replace(R.id.content_frame, NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
         } else if (id == R.id.nav_fav_places) {
-            getSupportFragmentManager()
-                    .beginTransaction()
+            fragmentTransaction
                     .replace(R.id.content_frame, FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG).commit();
         } else if (id == R.id.nav_find_service) {
 
@@ -149,18 +143,9 @@ public class UserhomeActivity extends AppCompatActivity
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
+        Log.i("on", "connected");
         startLocationUpdates();
-        if (mLastLocation != null) {
+        if (mCurrentLocation != null) {
             getNearbyRestaurants();
         }
     }
@@ -172,13 +157,18 @@ public class UserhomeActivity extends AppCompatActivity
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        Log.e(TAG_ERROR, "Connection failed");
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        mLastLocation = location;
-        if (mLastLocation != null) {
+        mCurrentLocation = location;
+        if (mLastLocation == null) {
+            startLocationUpdates();
+        }
+        Log.i("1", String.valueOf(mLastLocation.getLatitude()));
+        Log.i("1", String.valueOf(mCurrentLocation.getLatitude()));
+        if (mCurrentLocation != null && !mCurrentLocation.equals(mLastLocation)) {
             getNearbyRestaurants();
         }
     }
@@ -200,7 +190,8 @@ public class UserhomeActivity extends AppCompatActivity
         View headerView = navigationView.inflateHeaderView(R.layout.nav_header);
         tvUser = (TextView) headerView.findViewById(R.id.nav_hdr_name);
         tvEmail = (TextView) headerView.findViewById(R.id.nav_hdr_email);
-        imageViewProfile = (de.hdodenhof.circleimageview.CircleImageView) headerView.findViewById(R.id.nav_hdr_profile_image);
+        imageViewProfile = (de.hdodenhof.circleimageview.CircleImageView)
+                headerView.findViewById(R.id.nav_hdr_profile_image);
         mUserManager = new UserManager(getApplicationContext());
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -225,16 +216,8 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to request current location of the user.
      */
     private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
+        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
@@ -242,21 +225,38 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to generate the Places API url and request for nearby services.
      */
     private void getNearbyRestaurants() {
-        String lat = String.valueOf(mLastLocation.getLatitude());
-        String lng = String.valueOf(mLastLocation.getLongitude());
-        try {
-            InternalStorage.writeObject(this, KEY_LAT, lat);
-            InternalStorage.writeObject(this, KEY_LNG, lng);
-        } catch (IOException e) {
-            Log.e(TAG_ERROR, e.getMessage());
+        if (mLastLocation.distanceTo(mCurrentLocation) > 0 ||
+                mUserManager.getApiResponse() == null) {
+            mLastLocation = mCurrentLocation;
+            Log.i("3", String.valueOf(mLastLocation.distanceTo(mCurrentLocation)));
+            String lat = String.valueOf(mCurrentLocation.getLatitude());
+            String lng = String.valueOf(mCurrentLocation.getLongitude());
+            Log.i("lat", lat +" " + lng);
+            mUserManager.updateLocation(lat, lng);
+            mApiUrlData.put("service", "nearbysearch");
+            mApiUrlData.put("lat", lat);
+            mApiUrlData.put("lng", lng);
+            mApiUrlData.put("type", "restaurant");
+            mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
+            nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData, mUserEmail);
+            nearbyServiceSearch.execute();
+        } else {
+            Handler handler = new Handler(callbackBackgroundThreadCompleted);
+            Message message = new Message();
+            handler.sendMessage(message);
         }
-        mApiUrlData.put("service", "nearbysearch");
-        mApiUrlData.put("lat", lat);
-        mApiUrlData.put("lng", lng);
-        mApiUrlData.put("type", "restaurant");
-        mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
-        nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
-        nearbyServiceSearch.execute();
     }
 
+    /**
+     * Method to display user's profile image.
+     */
+    private void displayProfilePic() {
+        Uri profileImage;
+        try {
+            profileImage = mUserManager.getProfilePic(mUserEmail);
+            imageViewProfile.setImageURI(profileImage);
+        } catch (NullPointerException e) {
+            Log.e(TAG_ERROR, e.toString());
+        }
+    }
 }

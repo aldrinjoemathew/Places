@@ -46,8 +46,9 @@ public class NearbyPlacesFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_nearby_places, container, false);
         mViewPager = (ViewPager) v.findViewById(R.id.pager);
         TabLayout mTabLayout = (TabLayout) v.findViewById(R.id.tabLayout);
+        int tabCount = getResources().getInteger(R.integer.tab_count);
         mSectionsPagerAdapter = new PagerAdapter(
-                getChildFragmentManager(), 3);
+                getChildFragmentManager(), tabCount);
         mTabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mTabLayout.setupWithViewPager(mViewPager);

@@ -1,9 +1,5 @@
 package com.example.aldrin.places.AccountManagement;
 
-import android.net.Uri;
-
-import java.net.URI;
-
 /**
  * A POJO class to retrieve user information from user and
  * to access user information.
@@ -18,6 +14,15 @@ public class UserInformation {
     private String mConfirmPassword;
     private String mSearchRadius;
     private String mImageUri;
+    private String mApiResponse;
+
+    public String getmApiResponse() {
+        return mApiResponse;
+    }
+
+    public void setmApiResponse(String mApiResponse) {
+        this.mApiResponse = mApiResponse;
+    }
 
     public String getmImageUri() {
         return mImageUri;
