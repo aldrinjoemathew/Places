@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 public class Location implements Serializable {
     private Double lat;
+    private Double lng;
 
     public Double getLat() {
         return lat;
@@ -17,5 +18,4 @@ public class Location implements Serializable {
         return lng;
     }
 
-    private Double lng;
 }

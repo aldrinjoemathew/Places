@@ -42,8 +42,6 @@ public class UserhomeActivity extends AppCompatActivity
 
     private static final int GET_FROM_GALLERY = 1;
     private static final String TAG_ERROR = "error";
-    private static final String KEY_LAT = "lat";
-    private static final String KEY_LNG = "lng";
     private TextView tvUser;
     private TextView tvEmail;
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
@@ -55,7 +53,6 @@ public class UserhomeActivity extends AppCompatActivity
     private NearbyServiceSearch nearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
-    private Boolean mMapLoaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,8 +163,6 @@ public class UserhomeActivity extends AppCompatActivity
         if (mLastLocation == null) {
             startLocationUpdates();
         }
-        Log.i("1", String.valueOf(mLastLocation.getLatitude()));
-        Log.i("1", String.valueOf(mCurrentLocation.getLatitude()));
         if (mCurrentLocation != null && !mCurrentLocation.equals(mLastLocation)) {
             getNearbyRestaurants();
         }
@@ -228,17 +223,15 @@ public class UserhomeActivity extends AppCompatActivity
         if (mLastLocation.distanceTo(mCurrentLocation) > 0 ||
                 mUserManager.getApiResponse() == null) {
             mLastLocation = mCurrentLocation;
-            Log.i("3", String.valueOf(mLastLocation.distanceTo(mCurrentLocation)));
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lng = String.valueOf(mCurrentLocation.getLongitude());
-            Log.i("lat", lat +" " + lng);
             mUserManager.updateLocation(lat, lng);
             mApiUrlData.put("service", "nearbysearch");
             mApiUrlData.put("lat", lat);
             mApiUrlData.put("lng", lng);
             mApiUrlData.put("type", "restaurant");
             mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
-            nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData, mUserEmail);
+            nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
             nearbyServiceSearch.execute();
         } else {
             Handler handler = new Handler(callbackBackgroundThreadCompleted);

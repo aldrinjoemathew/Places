@@ -1,6 +1,7 @@
 package com.example.aldrin.places.Fragments;
 
 import android.content.Context;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -13,9 +14,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.aldrin.places.AccountManagement.UserInformation;
 import com.example.aldrin.places.AccountManagement.UserManager;
-import com.example.aldrin.places.CustomClasses.InternalStorage;
 import com.example.aldrin.places.NearbyJsonClasses.Geometry;
 import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
 import com.example.aldrin.places.NearbyJsonClasses.Result;
@@ -30,10 +29,9 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 
-import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.List;
 
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.locationDetailsAvailable;
 import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
 
 /**
@@ -120,7 +118,7 @@ public class MapFragment extends Fragment {
      * Update Google map with user's current location.
      */
     private void updateMap() {
-        getDataInternalStorage();
+        getLocationData();
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(new OnMapReadyCallback() {
@@ -130,9 +128,8 @@ public class MapFragment extends Fragment {
                 mGoogleMap.clear();
                 addLocationMarkers();
                 CameraPosition cameraPosition =
-                        new CameraPosition.Builder().target(mPosition).zoom(12).build();
+                        new CameraPosition.Builder().target(mPosition).zoom(16).build();
                 mGoogleMap.addMarker(new MarkerOptions().position(mPosition)).setTitle("My position");
-                //mGoogleMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             }
         });
@@ -165,7 +162,7 @@ public class MapFragment extends Fragment {
     /**
      * Get stored location data from device cache storage.
      */
-    private void getDataInternalStorage() {
+    private void getLocationData() {
         String apiResponse = mUserManager.getApiResponse();
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
@@ -175,43 +172,57 @@ public class MapFragment extends Fragment {
 
 
     private class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
-
         private View view;
-        private Result venue;
 
         public CustomInfoWindowAdapter() {
         }
 
         @Override
         public View getInfoContents(Marker marker) {
-
-            /*if (MapFragment.this.marker != null
+            if (MapFragment.this.marker != null
                     && MapFragment.this.marker.isInfoWindowShown()) {
                 MapFragment.this.marker.hideInfoWindow();
                 MapFragment.this.marker.showInfoWindow();
-            }*/
-
+            }
             return null;
         }
 
         @Override
         public View getInfoWindow(final Marker marker) {
             MapFragment.this.marker = marker;
+            Result venue;
             view = getLayoutInflater(null).inflate(R.layout.card_location_details,
                     null);
-            String venueDetails = marker.getSnippet();
-            Gson gson = new Gson();
-            venue = gson.fromJson(venueDetails, Result.class);
-            final ImageView image = ((ImageView) view.findViewById(R.id.card_image));
-            final TextView tvTitle = ((TextView) view.findViewById(R.id.rest_name_text_view));
-            final TextView tvDistance = ((TextView) view.findViewById(R.id.distance_text_view));
-            final TextView tvAddress = ((TextView) view.findViewById(R.id.address_text_view));
-            String title = venue.getName();
-            String address = venue.getVicinity();
-            tvTitle.setText(title);
-            tvAddress.setText(address);
-            tvDistance.setText("86548");
+            try {
+                String venueDetails = marker.getSnippet();
+                Gson gson = new Gson();
+                venue = gson.fromJson(venueDetails, Result.class);
+                final ImageView image = ((ImageView) view.findViewById(R.id.card_image));
+                final TextView tvTitle = ((TextView) view.findViewById(R.id.rest_name_text_view));
+                final TextView tvDistance = ((TextView) view.findViewById(R.id.distance_text_view));
+                final TextView tvAddress = ((TextView) view.findViewById(R.id.address_text_view));
+                String title = venue.getName();
+                String address = venue.getVicinity();
+                String distance = distanceFromCurrentPosition();
+                tvTitle.setText(title);
+                tvAddress.setText(address);
+                tvDistance.setText(distance + " km");
+            } catch (NullPointerException e) {
+                Log.e(TAG_ERROR, e.toString());
+            }
             return view;
+        }
+
+        private String distanceFromCurrentPosition() {
+            Location userLocation = new Location("user_location");
+            Location venueLocation = new Location("venue_location");
+            userLocation.setLatitude(mPosition.latitude);
+            userLocation.setLongitude(mPosition.longitude);
+            venueLocation.setLatitude(marker.getPosition().latitude);
+            venueLocation.setLongitude(marker.getPosition().longitude);
+            DecimalFormat df = new DecimalFormat("#.####");
+            Float distance = userLocation.distanceTo(venueLocation); //distance in meter
+            return String.valueOf(Double.parseDouble(df.format(distance/1000))); //distance in km
         }
     }
 }

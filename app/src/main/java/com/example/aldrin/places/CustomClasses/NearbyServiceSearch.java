@@ -29,12 +29,8 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
 
     private HashMap<String, String> mData = new HashMap<String, String>();
     private Context mContext;
-    private static final String KEY_JSON = "key";
     private static final String TAG_ERROR = "error";
     private static final String TAG_INFO = "info";
-    private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
-    private GetPlacesDetails getPlacesDetails;
-    private String mEmail;
     private UserManager mUserManager;
     public static Boolean bgProcessExists = false;
     public static Boolean locationDetailsAvailable = false;
@@ -45,10 +41,9 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
      * @param context
      * @param data
      */
-    public NearbyServiceSearch(Context context, HashMap<String, String> data, String email) {
+    public NearbyServiceSearch(Context context, HashMap<String, String> data) {
         mData = data;
         mContext = context;
-        mEmail = email;
         mUserManager = new UserManager(mContext);
     }
 
