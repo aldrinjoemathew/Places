@@ -33,6 +33,7 @@ import com.google.android.gms.location.LocationServices;
 import java.util.HashMap;
 
 import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
+import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackList;
 
 public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -67,9 +68,9 @@ public class UserhomeActivity extends AppCompatActivity
             }
         });
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        /*mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);*/
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -235,8 +236,10 @@ public class UserhomeActivity extends AppCompatActivity
             nearbyServiceSearch.execute();
         } else {
             Handler handler = new Handler(callbackBackgroundThreadCompleted);
+            Handler handler1 = new Handler(callbackList);
             Message message = new Message();
-            handler.sendMessage(message);
+            handler.dispatchMessage(message);
+            handler1.dispatchMessage(message);
         }
     }
 

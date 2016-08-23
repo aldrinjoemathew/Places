@@ -34,6 +34,7 @@
                 android:minLines="2"
                 android:text="@string/restaurant_name"
                 android:textStyle="bold"
+                android:textColor="@color/colorPrimaryDark"
                 android:textSize="@dimen/title_text_size"/>
         </LinearLayout>
         <LinearLayout
@@ -61,14 +62,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <CheckedTextView
+                android:id="@+id/open_now"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:text="@string/open_now"
                 android:textSize="@dimen/text_size"
-                android:checked="false"/>
+                android:checked="true"
+                android:checkMark="?android:attr/listChoiceIndicatorMultiple"/>
             <RatingBar
                 style="@style/RatingBar"
+                android:id="@+id/venue_rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"

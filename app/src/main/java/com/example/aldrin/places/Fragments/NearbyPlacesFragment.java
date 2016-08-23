@@ -43,9 +43,13 @@ public class NearbyPlacesFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_nearby_places, container, false);
-        mViewPager = (ViewPager) v.findViewById(R.id.pager);
-        TabLayout mTabLayout = (TabLayout) v.findViewById(R.id.tabLayout);
+        return inflater.inflate(R.layout.fragment_nearby_places, container, false);
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        mViewPager = (ViewPager) view.findViewById(R.id.pager);
+        TabLayout mTabLayout = (TabLayout) view.findViewById(R.id.tabLayout);
         int tabCount = getResources().getInteger(R.integer.tab_count);
         mSectionsPagerAdapter = new PagerAdapter(
                 getChildFragmentManager(), tabCount);
@@ -53,6 +57,6 @@ public class NearbyPlacesFragment extends Fragment {
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mTabLayout.setupWithViewPager(mViewPager);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mTabLayout));
-        return v;
+        mViewPager.setCurrentItem(1);
     }
 }

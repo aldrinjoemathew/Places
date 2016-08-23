@@ -110,13 +110,11 @@ public class UserManager {
     }
 
     public void updateApiResponse(String apiString) {
-        Log.i("1", "mhjchv");
         mPrefEditor.putString(KEY_API_RESPONSE, apiString);
         mPrefEditor.commit();
     }
 
     public void updateLocation(String lat, String lng) {
-        Log.i("2", "mhjchv");
         mPrefEditor.putString(KEY_CURRENT_LAT, lat);
         mPrefEditor.putString(KEY_CURRENT_LNG, lng);
         mPrefEditor.commit();

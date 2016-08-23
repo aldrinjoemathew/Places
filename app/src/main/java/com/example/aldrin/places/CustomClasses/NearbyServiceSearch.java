@@ -1,6 +1,7 @@
 package com.example.aldrin.places.CustomClasses;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
@@ -35,6 +36,7 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
     public static Boolean bgProcessExists = false;
     public static Boolean locationDetailsAvailable = false;
     public static Handler.Callback callbackBackgroundThreadCompleted;
+    public static Handler.Callback callbackList;
 
     /**
      * Get data values for API call
@@ -106,8 +108,12 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
         bgProcessExists = false;
         locationDetailsAvailable = true;
         Handler handler = new Handler(callbackBackgroundThreadCompleted);
+        Handler handler1 = new Handler(callbackList);
         Message message = new Message();
         handler.sendMessage(message);
+        handler1.sendMessage(message);
+        /*Intent i = new Intent("com.hmkcode.android.USER_ACTION");
+        mContext.sendBroadcast(i);*/
     }
 
     /**
@@ -120,4 +126,5 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
         Log.i(TAG_INFO,url);
         return url;
     }
+
 }

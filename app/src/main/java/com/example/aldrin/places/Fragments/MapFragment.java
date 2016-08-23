@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
@@ -31,6 +32,7 @@ import com.google.gson.Gson;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Observable;
 
 import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
 
@@ -68,17 +70,27 @@ public class MapFragment extends Fragment {
         mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         mUserManager = new UserManager(getContext());
+        if (mUserManager.getApiResponse() != null) {
+            updateMap();
+        } else {
+            setUpMap();
+        }
+        callbackBackgroundThreadCompleted = new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message message) {
+                if (loadMap) {
+                    updateMap();
+                }
+                return false;
+            }
+        };
     }
 
     @Override
     public void onResume() {
         super.onResume();
         loadMap = true;
-        if (mUserManager.getApiResponse() != null) {
-            updateMap();
-        } else {
-            setUpMap();
-        }
+
     }
 
     @Override
@@ -103,15 +115,7 @@ public class MapFragment extends Fragment {
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             }
         });
-        callbackBackgroundThreadCompleted = new Handler.Callback() {
-            @Override
-            public boolean handleMessage(Message message) {
-                if (loadMap) {
-                    updateMap();
-                }
-                return false;
-            }
-        };
+
     }
 
     /**
@@ -197,16 +201,18 @@ public class MapFragment extends Fragment {
                 String venueDetails = marker.getSnippet();
                 Gson gson = new Gson();
                 venue = gson.fromJson(venueDetails, Result.class);
-                final ImageView image = ((ImageView) view.findViewById(R.id.card_image));
-                final TextView tvTitle = ((TextView) view.findViewById(R.id.rest_name_text_view));
-                final TextView tvDistance = ((TextView) view.findViewById(R.id.distance_text_view));
-                final TextView tvAddress = ((TextView) view.findViewById(R.id.address_text_view));
+                ImageView image = (ImageView) view.findViewById(R.id.card_image);
+                TextView tvTitle = (TextView) view.findViewById(R.id.rest_name_text_view);
+                TextView tvDistance = (TextView) view.findViewById(R.id.distance_text_view);
+                TextView tvAddress = (TextView) view.findViewById(R.id.address_text_view);
+                RatingBar ratingVenue = (RatingBar) view.findViewById(R.id.venue_rating);
                 String title = venue.getName();
                 String address = venue.getVicinity();
                 String distance = distanceFromCurrentPosition();
                 tvTitle.setText(title);
                 tvAddress.setText(address);
                 tvDistance.setText(distance + " km");
+                ratingVenue.setRating(venue.getRating());
             } catch (NullPointerException e) {
                 Log.e(TAG_ERROR, e.toString());
             }
