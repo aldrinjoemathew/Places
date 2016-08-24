@@ -4,14 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
-import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
-import com.example.aldrin.places.NearbyJsonClasses.Result;
 import com.example.aldrin.places.R;
-import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,7 +16,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by aldrin on 10/8/16.
@@ -33,10 +28,6 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
     private static final String TAG_ERROR = "error";
     private static final String TAG_INFO = "info";
     private UserManager mUserManager;
-    public static Boolean bgProcessExists = false;
-    public static Boolean locationDetailsAvailable = false;
-    public static Handler.Callback callbackBackgroundThreadCompleted;
-    public static Handler.Callback callbackList;
 
     /**
      * Get data values for API call
@@ -53,8 +44,7 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
      * Letting know other activities that background process have started.
      */
     protected void onPreExecute() {
-        bgProcessExists = true;
-        locationDetailsAvailable = false;
+
     }
 
     /**
@@ -103,17 +93,16 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
             Log.i(TAG_INFO, String.valueOf(R.string.error));
             return;
         }
-        Log.i(TAG_INFO, response);
         mUserManager.updateApiResponse(response);
-        bgProcessExists = false;
-        locationDetailsAvailable = true;
-        Handler handler = new Handler(callbackBackgroundThreadCompleted);
-        Handler handler1 = new Handler(callbackList);
-        Message message = new Message();
-        handler.sendMessage(message);
-        handler1.sendMessage(message);
-        /*Intent i = new Intent("com.hmkcode.android.USER_ACTION");
-        mContext.sendBroadcast(i);*/
+        broadcastLocationUpdate();
+    }
+
+    /**
+     * Sends a broadcast on location update.
+     */
+    void broadcastLocationUpdate() {
+        Intent locationUpdate = new Intent("location_update");
+        mContext.sendBroadcast(locationUpdate);
     }
 
     /**

@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:name="android.support.multidex.MultiDexApplication"
@@ -46,12 +46,10 @@
         <activity
             android:name=".Activities.UserhomeActivity"
             android:label="@string/title_activity_userhome"
-            android:theme="@style/AppTheme"></activity>
-        <receiver android:name=".Fragments.ListFragment$MyReceiver" >
-            <intent-filter>
-                <action android:name="com.hmkcode.android.USER_ACTION" />
-            </intent-filter>
-        </receiver>
+            android:theme="@style/AppTheme" />
+
+        <activity android:name=".Activities.PlacesDetailsActivity" />
+
     </application>
 
 </manifest>

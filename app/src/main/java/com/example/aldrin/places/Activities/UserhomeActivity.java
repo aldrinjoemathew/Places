@@ -1,15 +1,16 @@
 package com.example.aldrin.places.Activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -21,9 +22,9 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
+import com.example.aldrin.places.CustomClasses.NearbyServiceSearch;
 import com.example.aldrin.places.Fragments.FavouritePlacesFragment;
 import com.example.aldrin.places.Fragments.NearbyPlacesFragment;
-import com.example.aldrin.places.CustomClasses.NearbyServiceSearch;
 import com.example.aldrin.places.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -31,9 +32,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.HashMap;
-
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackList;
 
 public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -43,6 +41,8 @@ public class UserhomeActivity extends AppCompatActivity
 
     private static final int GET_FROM_GALLERY = 1;
     private static final String TAG_ERROR = "error";
+    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
+    private static final int MY_PERMISSIONS_READ_STORAGE = 2;
     private TextView tvUser;
     private TextView tvEmail;
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
@@ -60,7 +60,7 @@ public class UserhomeActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_userhome);
         setViewItems();
-
+        getLastLocation();
         imageViewProfile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -68,9 +68,9 @@ public class UserhomeActivity extends AppCompatActivity
             }
         });
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        /*mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);*/
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -83,7 +83,7 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode==GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
+        if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri selectedImage = data.getData();
             mUserManager.changeProfilePic(mUserEmail, selectedImage);
             displayProfilePic();
@@ -141,7 +141,6 @@ public class UserhomeActivity extends AppCompatActivity
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        Log.i("on", "connected");
         startLocationUpdates();
         if (mCurrentLocation != null) {
             getNearbyRestaurants();
@@ -161,12 +160,39 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
-        if (mLastLocation == null) {
+        if (mCurrentLocation == null) {
             startLocationUpdates();
-        }
-        if (mCurrentLocation != null && !mCurrentLocation.equals(mLastLocation)) {
+        } else if (mLastLocation == null) {
+            getLastLocation();
+        } else if (mLastLocation.distanceTo(mCurrentLocation) > 50) {
             getNearbyRestaurants();
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+
+                    finish();
+                }
+                return;
+            }
+            case MY_PERMISSIONS_READ_STORAGE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                } else {
+
+                }
+                return;
+            }
+        }
+
     }
 
     /**
@@ -212,17 +238,38 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to request current location of the user.
      */
     private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_LOCATION);
+            return;
+        }
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     /**
+     * Method to access the user's last location.
+     */
+    private void getLastLocation() {
+        Location lastLocation = new Location("last_location");
+        lastLocation.setLatitude(0);
+        lastLocation.setLongitude(0);
+        try {
+            String[] loc = mUserManager.getLocation();
+            lastLocation.setLatitude(Double.parseDouble(loc[0]));
+            lastLocation.setLongitude(Double.parseDouble(loc[1]));
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        mLastLocation = lastLocation;
+    }
+
+    /**
      * Method to generate the Places API url and request for nearby services.
      */
     private void getNearbyRestaurants() {
-        if (mLastLocation.distanceTo(mCurrentLocation) > 0 ||
-                mUserManager.getApiResponse() == null) {
             mLastLocation = mCurrentLocation;
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lng = String.valueOf(mCurrentLocation.getLongitude());
@@ -234,13 +281,6 @@ public class UserhomeActivity extends AppCompatActivity
             mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
             nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
             nearbyServiceSearch.execute();
-        } else {
-            Handler handler = new Handler(callbackBackgroundThreadCompleted);
-            Handler handler1 = new Handler(callbackList);
-            Message message = new Message();
-            handler.dispatchMessage(message);
-            handler1.dispatchMessage(message);
-        }
     }
 
     /**
@@ -250,6 +290,11 @@ public class UserhomeActivity extends AppCompatActivity
         Uri profileImage;
         try {
             profileImage = mUserManager.getProfilePic(mUserEmail);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_READ_STORAGE);
+            }
             imageViewProfile.setImageURI(profileImage);
         } catch (NullPointerException e) {
             Log.e(TAG_ERROR, e.toString());

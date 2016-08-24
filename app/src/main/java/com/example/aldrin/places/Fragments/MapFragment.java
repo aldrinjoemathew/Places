@@ -1,10 +1,13 @@
 package com.example.aldrin.places.Fragments;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -24,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -32,17 +36,11 @@ import com.google.gson.Gson;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Observable;
-
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class MapFragment extends Fragment {
-    private static final String KEY_LAT = "lat";
-    private static final String KEY_LNG = "lng";
-    private static final String KEY_JSON = "key";
     private static final String TAG_ERROR = "error";
     private GoogleMap mGoogleMap;
     private LatLng mPosition;
@@ -52,6 +50,7 @@ public class MapFragment extends Fragment {
     private SupportMapFragment mapFragment;
     private Boolean loadMap;
     private UserManager mUserManager;
+    private Bitmap smallMarker;
 
     public MapFragment() {
         super();
@@ -70,33 +69,49 @@ public class MapFragment extends Fragment {
         mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         mUserManager = new UserManager(getContext());
+        createMarkerBitmap();
         if (mUserManager.getApiResponse() != null) {
             updateMap();
         } else {
             setUpMap();
         }
-        callbackBackgroundThreadCompleted = new Handler.Callback() {
-            @Override
-            public boolean handleMessage(Message message) {
-                if (loadMap) {
-                    updateMap();
-                }
-                return false;
+    }
+
+    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (loadMap) {
+                updateMap();
             }
-        };
+        }
+    };
+
+    private void createMarkerBitmap() {
+        int height = 32;
+        int width = 32;
+        Bitmap icon = BitmapFactory.decodeResource(mContext.getResources(),
+                R.drawable.ic_location);
+         smallMarker = Bitmap.createScaledBitmap(icon, width, height, false);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         loadMap = true;
-
+        mContext.registerReceiver(locationUpdateReceiver, new IntentFilter("location_update"));
     }
 
     @Override
     public void onPause() {
         super.onPause();
         loadMap = false;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mGoogleMap.clear();
+        mContext.unregisterReceiver(locationUpdateReceiver);
     }
 
     /**
@@ -130,10 +145,10 @@ public class MapFragment extends Fragment {
             public void onMapReady(GoogleMap gMap) {
                 mGoogleMap = gMap;
                 mGoogleMap.clear();
+                mGoogleMap.addMarker(new MarkerOptions().position(mPosition).title("Me"));
                 addLocationMarkers();
                 CameraPosition cameraPosition =
                         new CameraPosition.Builder().target(mPosition).zoom(16).build();
-                mGoogleMap.addMarker(new MarkerOptions().position(mPosition)).setTitle("My position");
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             }
         });
@@ -157,7 +172,7 @@ public class MapFragment extends Fragment {
                 latLng = new LatLng(location.getLat(), location.getLng());
                 String venueDetails = gson.toJson(venue);
                 MarkerOptions marker = new MarkerOptions().position(latLng).snippet(venueDetails);
-                mGoogleMap.addMarker(marker).setTitle(venueName);
+                mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.fromBitmap(smallMarker))).setTitle(venueName);
                 mGoogleMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
             }
         }
@@ -175,6 +190,9 @@ public class MapFragment extends Fragment {
     }
 
 
+    /**
+     * A custom class to display info window on clicking on marker.
+     */
     private class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         private View view;
 
@@ -199,6 +217,9 @@ public class MapFragment extends Fragment {
                     null);
             try {
                 String venueDetails = marker.getSnippet();
+                if (venueDetails == null) {
+                    return null;
+                }
                 Gson gson = new Gson();
                 venue = gson.fromJson(venueDetails, Result.class);
                 ImageView image = (ImageView) view.findViewById(R.id.card_image);
@@ -219,6 +240,10 @@ public class MapFragment extends Fragment {
             return view;
         }
 
+        /**
+         * Method to find the distance to a venue from current position.
+         * @return distance
+         */
         private String distanceFromCurrentPosition() {
             Location userLocation = new Location("user_location");
             Location venueLocation = new Location("venue_location");
@@ -226,7 +251,7 @@ public class MapFragment extends Fragment {
             userLocation.setLongitude(mPosition.longitude);
             venueLocation.setLatitude(marker.getPosition().latitude);
             venueLocation.setLongitude(marker.getPosition().longitude);
-            DecimalFormat df = new DecimalFormat("#.####");
+            DecimalFormat df = new DecimalFormat("#.##");
             Float distance = userLocation.distanceTo(venueLocation); //distance in meter
             return String.valueOf(Double.parseDouble(df.format(distance/1000))); //distance in km
         }

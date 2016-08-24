@@ -69,8 +69,12 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
         viewHolder.tvAddress.setText(venue.getVicinity());
         viewHolder.tvDistance.setText(distanceFromCurrentPosition(venue) + "km");
         viewHolder.ratingRestaurant.setRating(venue.getRating());
-/*        Boolean isOpenNow = venue.getOpening_hours().getOpen_now();
-        viewHolder.ctvOpen.setChecked(isOpenNow);*/
+        try {
+            Boolean isOpenNow = venue.getOpening_hours().getOpen_now();
+            viewHolder.ctvOpen.setChecked(isOpenNow);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
         return row;
     }
 

@@ -2,12 +2,10 @@ package com.example.aldrin.places.CustomClasses;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
-import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
 import com.example.aldrin.places.NearbyJsonClasses.Result;
+import com.example.aldrin.places.PlacesDetailsJsonClasses.GetFromJson;
 import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
@@ -17,7 +15,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -26,7 +23,6 @@ import java.util.List;
 
 public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
 
-    private static final String KEY_JSON = "key";
     private static final String TAG_ERROR = "error";
     private static final String TAG_INFO = "info";
     private List<Result> mResults;
@@ -63,13 +59,8 @@ public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
                     Log.i(TAG_INFO, String.valueOf(R.string.error));
                     continue;
                 }
-                /*Gson gson = new Gson();
-                GetFromJson json = gson.fromJson(response, GetFromJson.class);*/
-                try {
-                    InternalStorage.writeObject(mContext, placeId, response);
-                } catch (IOException e) {
-                    Log.e(TAG_ERROR, e.getMessage());
-                }
+                Gson gson = new Gson();
+                GetFromJson json = gson.fromJson(response, GetFromJson.class);
             }
         }
         return null;

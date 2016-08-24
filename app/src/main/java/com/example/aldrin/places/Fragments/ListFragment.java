@@ -3,9 +3,8 @@ package com.example.aldrin.places.Fragments;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -23,9 +22,6 @@ import com.google.gson.Gson;
 
 import java.util.List;
 
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackBackgroundThreadCompleted;
-import static com.example.aldrin.places.CustomClasses.NearbyServiceSearch.callbackList;
-
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -42,11 +38,9 @@ public class ListFragment extends Fragment {
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         mContext = getContext();
         mUserManager = new UserManager(getContext());
         return inflater.inflate(R.layout.fragment_list, container, false);
@@ -58,15 +52,32 @@ public class ListFragment extends Fragment {
 
         mCardList = (ListView) view.findViewById(R.id.places_list_view);
 
-        callbackList = new Handler.Callback() {
-            @Override
-            public boolean handleMessage(Message message) {
-                showCardList();
-                return false;
-            }
-        };
+        if (mUserManager.getApiResponse() != null) {
+            showCardList();
+        }
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        mContext.registerReceiver(locationUpdateReceiver, new IntentFilter("location_update"));
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mContext.unregisterReceiver(locationUpdateReceiver);
+    }
+
+    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            showCardList();
+        }
+    };
+    /**
+     * Show venue cards as list.
+     */
     private void showCardList() {
         List<Result> results = getLocationData();
         mCardAdapter = new CustomCardArrayAdapter(mContext, R.layout.card_location_details, mPosition);
@@ -89,13 +100,5 @@ public class ListFragment extends Fragment {
         String loc[] = mUserManager.getLocation();
         mPosition = new LatLng(Double.parseDouble(loc[0]), Double.parseDouble(loc[1]));
         return mJsonResponse.getResults();
-    }
-
-    public class MyReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            showCardList();
-        }
     }
 }

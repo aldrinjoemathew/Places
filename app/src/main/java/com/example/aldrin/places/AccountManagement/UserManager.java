@@ -7,14 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.util.Log;
 
 import com.example.aldrin.places.Activities.ChangePasswordActivity;
 import com.example.aldrin.places.Activities.LoginActivity;
 import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Random;
 
