@@ -2,6 +2,7 @@ package com.example.aldrin.places.Activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -16,9 +17,18 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
@@ -43,6 +53,8 @@ public class UserhomeActivity extends AppCompatActivity
     private static final String TAG_ERROR = "error";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
+    private Button btnSubmitRadius;
+    private EditText etRadius;
     private TextView tvUser;
     private TextView tvEmail;
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
@@ -51,9 +63,10 @@ public class UserhomeActivity extends AppCompatActivity
     private Location mCurrentLocation;
     private Location mLastLocation;
     private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
-    private NearbyServiceSearch nearbyServiceSearch;
+    private NearbyServiceSearch mNearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
+    private PopupWindow mPopupWindow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +179,8 @@ public class UserhomeActivity extends AppCompatActivity
             getLastLocation();
         } else if (mLastLocation.distanceTo(mCurrentLocation) > 50) {
             getNearbyRestaurants();
+        } else if (mUserManager.getApiResponse() == null) {
+            getNearbyRestaurants();
         }
     }
 
@@ -192,7 +207,56 @@ public class UserhomeActivity extends AppCompatActivity
                 return;
             }
         }
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.userhome, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                initiatePopupWindow();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void initiatePopupWindow() {
+        try {
+            LayoutInflater inflater = (LayoutInflater) UserhomeActivity.this
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflater.inflate(R.layout.popup_update_radius,
+                    (ViewGroup) findViewById(R.id.popup_radius));
+            mPopupWindow = new PopupWindow(layout, 500, 500, true);
+            mPopupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
+
+            btnSubmitRadius = (Button) layout.findViewById(R.id.raius_update_button);
+            btnSubmitRadius.setOnClickListener(submitRadius);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private View.OnClickListener submitRadius = new View.OnClickListener() {
+        public void onClick(View v) {
+            mPopupWindow.dismiss();
+
+        }
+    };
+
+    /**
+     * Sends a broadcast on location update.
+     */
+    void broadcastLocationUpdate() {
+        Intent locationUpdate = new Intent("location_update");
+        this.sendBroadcast(locationUpdate);
     }
 
     /**
@@ -279,8 +343,8 @@ public class UserhomeActivity extends AppCompatActivity
             mApiUrlData.put("lng", lng);
             mApiUrlData.put("type", "restaurant");
             mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
-            nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
-            nearbyServiceSearch.execute();
+            mNearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
+            mNearbyServiceSearch.execute();
     }
 
     /**
