@@ -57,12 +57,12 @@ public class UserManager {
 
     /**
      * Clear the user login session on logging out.
+     * Redirect user to login page after logout.
      */
     public void logoutUser(){
         mPrefEditor.putBoolean(IS_USER_LOGIN, false);
         mPrefEditor.putString(KEY_LOGGED_IN_EMAIL, null);
         mPrefEditor.commit();
-        // After logout redirect user to Login Activity
         Intent loginIntent = new Intent(mContext, LoginActivity.class);
         loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -107,7 +107,7 @@ public class UserManager {
         mPrefEditor.commit();
     }
 
-    public void updateApiResponse(String apiString) {
+    public void updateNearbyResponse(String apiString) {
         mPrefEditor.putString(KEY_API_RESPONSE, apiString);
         mPrefEditor.commit();
     }

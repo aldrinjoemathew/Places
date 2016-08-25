@@ -4,10 +4,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.example.aldrin.places.NearbyJsonClasses.Result;
-import com.example.aldrin.places.PlacesDetailsJsonClasses.GetFromJson;
 import com.example.aldrin.places.R;
-import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,7 +12,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 
 /**
  * Created by aldrin on 18/8/16.
@@ -23,24 +19,26 @@ import java.util.List;
 
 public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
 
-    private static final String TAG_ERROR = "error";
-    private static final String TAG_INFO = "info";
-    private List<Result> mResults;
+    public AsyncResponse delegate;
+    private final String TAG_ERROR = "error";
+    private final String TAG_INFO = "info";
+    private String mPlaceId;
     private Context mContext;
+
     /**
      * Get data values for API call
      * @param context
      */
-    public GetPlacesDetails(Context context, List<Result> results) {
+    public GetPlacesDetails(Context context, String placeId) {
         mContext = context;
-        mResults = results;
+        mPlaceId = placeId;
     }
 
     /**
      * Letting know other activities that background process have started.
      */
     protected void onPreExecute() {
-        Log.e(TAG_ERROR, "hkjskdfhlkdf");
+
     }
 
     /**
@@ -50,25 +48,8 @@ public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
      * @return
      */
     protected String doInBackground(Void... urls) {
-        if (mResults!= null) {
-            for (int i=0; i< mResults.size(); i++) {
-                Result venue = mResults.get(i);
-                String placeId = venue.getPlace_id();
-                String response = getPlaceDetails(placeId);
-                if(response == null) {
-                    Log.i(TAG_INFO, String.valueOf(R.string.error));
-                    continue;
-                }
-                Gson gson = new Gson();
-                GetFromJson json = gson.fromJson(response, GetFromJson.class);
-            }
-        }
-        return null;
-    }
-
-    private String getPlaceDetails(String placeId) {
         try {
-            URL url = new URL(buildUrl(placeId));
+            URL url = new URL(buildUrl());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             try {
                 BufferedReader bufferedReader =
@@ -79,7 +60,8 @@ public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
                     stringBuilder.append(line).append("\n");
                 }
                 bufferedReader.close();
-                return stringBuilder.toString();
+                String response = stringBuilder.toString();
+                return response;
             } catch (IOException e) {
                 Log.e(TAG_ERROR, e.getMessage(), e);
                 return null;
@@ -102,17 +84,27 @@ public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
      * @param response
      */
     protected void onPostExecute(String response) {
+        if(response == null) {
+            Log.i(TAG_INFO, String.valueOf(R.string.error));
+        }
+        delegate.displayProcessDetails(response);
     }
 
-    private String buildUrl(String placeId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("https://maps.googleapis.com/maps/api/place/");
-        sb.append("details");
-        sb.append("/json?placeid=");
-        sb.append(placeId);
-        sb.append("&key=");
-        sb.append(mContext.getString(R.string.google_places_web_key));
-        String url = sb.toString();
+
+    /**
+     * Interface is used to pass the data from background thread to main thread.
+     */
+    public interface AsyncResponse {
+        void displayProcessDetails(String output);
+    }
+
+    /**
+     * Method is used to build the places details API url.
+     * @return url
+     */
+    private String buildUrl() {
+        String url = String.format(mContext.getString(R.string.places_details_url),
+                mPlaceId);
         Log.i(TAG_INFO,url);
         return url;
     }

@@ -10,9 +10,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
+import com.example.aldrin.places.Activities.PlacesDetailsActivity;
 import com.example.aldrin.places.Adapters.CustomCardArrayAdapter;
 import com.example.aldrin.places.NearbyJsonClasses.GetFromJson;
 import com.example.aldrin.places.NearbyJsonClasses.Result;
@@ -33,6 +35,7 @@ public class ListFragment extends Fragment {
     private UserManager mUserManager;
     private GetFromJson mJsonResponse;
     private LatLng mPosition;
+    private List<Result> results;
 
     public ListFragment() {
         // Required empty public constructor
@@ -69,17 +72,21 @@ public class ListFragment extends Fragment {
         mContext.unregisterReceiver(locationUpdateReceiver);
     }
 
+    /**
+     * Broadcast receiver to get notification when location is updated.
+     */
     BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             showCardList();
         }
     };
+
     /**
      * Show venue cards as list.
      */
     private void showCardList() {
-        List<Result> results = getLocationData();
+        results = getLocationData();
         mCardAdapter = new CustomCardArrayAdapter(mContext, R.layout.card_location_details, mPosition);
         if (results != null) {
             for (int i = 0; i < results.size(); i++) {
@@ -91,7 +98,7 @@ public class ListFragment extends Fragment {
     }
 
     /**
-     * Get stored location data from device cache storage.
+     * Get stored location data from shared preference.
      */
     private List<Result> getLocationData() {
         String apiResponse = mUserManager.getApiResponse();

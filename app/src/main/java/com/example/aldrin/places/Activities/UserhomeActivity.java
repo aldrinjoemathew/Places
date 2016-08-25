@@ -2,6 +2,7 @@ package com.example.aldrin.places.Activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -17,8 +18,18 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.NumberPicker;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
@@ -31,6 +42,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class UserhomeActivity extends AppCompatActivity
@@ -43,6 +55,8 @@ public class UserhomeActivity extends AppCompatActivity
     private static final String TAG_ERROR = "error";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
+    private Button btnSubmitRadius;
+    private NumberPicker mPickRadius;
     private TextView tvUser;
     private TextView tvEmail;
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
@@ -51,9 +65,10 @@ public class UserhomeActivity extends AppCompatActivity
     private Location mCurrentLocation;
     private Location mLastLocation;
     private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
-    private NearbyServiceSearch nearbyServiceSearch;
+    private NearbyServiceSearch mNearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
+    private PopupWindow mPopupWindow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +181,8 @@ public class UserhomeActivity extends AppCompatActivity
             getLastLocation();
         } else if (mLastLocation.distanceTo(mCurrentLocation) > 50) {
             getNearbyRestaurants();
+        } else if (mUserManager.getApiResponse() == null) {
+            getNearbyRestaurants();
         }
     }
 
@@ -192,7 +209,70 @@ public class UserhomeActivity extends AppCompatActivity
                 return;
             }
         }
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.userhome, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_update_radius:
+                initiatePopupWindow();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
+     * Initiate and display popup window.
+     */
+    private void initiatePopupWindow() {
+        try {
+            LayoutInflater inflater = (LayoutInflater) UserhomeActivity.this
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflater.inflate(R.layout.popup_update_radius,
+                    (ViewGroup) findViewById(R.id.popup_radius));
+            mPickRadius = (NumberPicker) layout.findViewById(R.id.numberPicker);
+            mPickRadius.setDisplayedValues(new String[] {"100", "500", "1000", "2500", "5000"});
+            mPickRadius.setMinValue(0);
+            mPickRadius.setMaxValue(4);
+            String radius = mUserManager.getSearchRadius(mUserEmail);
+            int currentRadiusIndex = Arrays.asList(mPickRadius.getDisplayedValues()).indexOf(radius);
+            mPickRadius.setValue(currentRadiusIndex);
+            mPopupWindow = new PopupWindow(layout);
+            mPopupWindow.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+            mPopupWindow.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
+            mPopupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
+            btnSubmitRadius = (Button) layout.findViewById(R.id.radius_update_button);
+            btnSubmitRadius.setOnClickListener(submitRadius);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private View.OnClickListener submitRadius = new View.OnClickListener() {
+        public void onClick(View v) {
+            mPopupWindow.dismiss();
+
+            String radius = mPickRadius.getDisplayedValues()[mPickRadius.getValue()];
+            mUserManager.updateSearchRadius(mUserEmail, radius);
+            getNearbyRestaurants();
+        }
+    };
+
+    /**
+     * Sends a broadcast on location update.
+     */
+    void broadcastLocationUpdate() {
+        Intent locationUpdate = new Intent("location_update");
+        this.sendBroadcast(locationUpdate);
     }
 
     /**
@@ -270,17 +350,17 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to generate the Places API url and request for nearby services.
      */
     private void getNearbyRestaurants() {
-            mLastLocation = mCurrentLocation;
-            String lat = String.valueOf(mCurrentLocation.getLatitude());
-            String lng = String.valueOf(mCurrentLocation.getLongitude());
-            mUserManager.updateLocation(lat, lng);
-            mApiUrlData.put("service", "nearbysearch");
-            mApiUrlData.put("lat", lat);
-            mApiUrlData.put("lng", lng);
-            mApiUrlData.put("type", "restaurant");
-            mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
-            nearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
-            nearbyServiceSearch.execute();
+        mLastLocation = mCurrentLocation;
+        String lat = String.valueOf(mCurrentLocation.getLatitude());
+        String lng = String.valueOf(mCurrentLocation.getLongitude());
+        mUserManager.updateLocation(lat, lng);
+        mApiUrlData.put("service", "nearbysearch");
+        mApiUrlData.put("lat", lat);
+        mApiUrlData.put("lng", lng);
+        mApiUrlData.put("type", "restaurant");
+        mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
+        mNearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
+        mNearbyServiceSearch.execute();
     }
 
     /**

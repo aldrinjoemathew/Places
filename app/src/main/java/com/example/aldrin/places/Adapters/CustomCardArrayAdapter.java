@@ -1,6 +1,7 @@
 package com.example.aldrin.places.Adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.example.aldrin.places.Activities.PlacesDetailsActivity;
 import com.example.aldrin.places.NearbyJsonClasses.Result;
 import com.example.aldrin.places.R;
 import com.google.android.gms.maps.model.LatLng;
@@ -64,7 +66,7 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
         } else {
             viewHolder = (CardViewHolder)row.getTag();
         }
-        Result venue = getItem(position);
+        final Result venue = getItem(position);
         viewHolder.tvTitle.setText(venue.getName());
         viewHolder.tvAddress.setText(venue.getVicinity());
         viewHolder.tvDistance.setText(distanceFromCurrentPosition(venue) + "km");
@@ -75,6 +77,15 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String placeId = venue.getPlace_id();
+                Intent placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
+                placesDetailsIntent.putExtra("place_id", placeId);
+                getContext().startActivity(placesDetailsIntent);
+            }
+        });
         return row;
     }
 

@@ -77,23 +77,6 @@ public class MapFragment extends Fragment {
         }
     }
 
-    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (loadMap) {
-                updateMap();
-            }
-        }
-    };
-
-    private void createMarkerBitmap() {
-        int height = 32;
-        int width = 32;
-        Bitmap icon = BitmapFactory.decodeResource(mContext.getResources(),
-                R.drawable.ic_location);
-         smallMarker = Bitmap.createScaledBitmap(icon, width, height, false);
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -112,6 +95,28 @@ public class MapFragment extends Fragment {
         super.onStop();
         mGoogleMap.clear();
         mContext.unregisterReceiver(locationUpdateReceiver);
+    }
+    /**
+     * Broadcast receiver called when location details are changed.
+     */
+    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (loadMap) {
+                updateMap();
+            }
+        }
+    };
+
+    /**
+     * Create a custom marker to mark nearby locations.
+     */
+    private void createMarkerBitmap() {
+        int height = 32;
+        int width = 32;
+        Bitmap icon = BitmapFactory.decodeResource(mContext.getResources(),
+                R.drawable.ic_location);
+        smallMarker = Bitmap.createScaledBitmap(icon, width, height, false);
     }
 
     /**
@@ -158,6 +163,7 @@ public class MapFragment extends Fragment {
      * Add markers on google map.
      */
     private void addLocationMarkers() {
+        mGoogleMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
         String apiResponse = mUserManager.getApiResponse();
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
@@ -172,8 +178,8 @@ public class MapFragment extends Fragment {
                 latLng = new LatLng(location.getLat(), location.getLng());
                 String venueDetails = gson.toJson(venue);
                 MarkerOptions marker = new MarkerOptions().position(latLng).snippet(venueDetails);
-                mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.fromBitmap(smallMarker))).setTitle(venueName);
-                mGoogleMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
+                /*mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.fromBitmap(smallMarker))).setTitle(venueName);*/
+                mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.defaultMarker(173))).setTitle(venueName);
             }
         }
     }

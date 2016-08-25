@@ -3,8 +3,8 @@
     android:id="@+id/places_list_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clickable="true"
     tools:context="com.example.aldrin.places.Fragments.ListFragment">
-
 
 
 </ListView>

@@ -29,7 +29,7 @@
                 android:id="@+id/rest_name_text_view"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center"
+                android:gravity="left"
                 android:layout_weight="3"
                 android:minLines="2"
                 android:text="@string/restaurant_name"
@@ -40,7 +40,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="10dp"
+            android:paddingTop="20dp"
             android:orientation="horizontal"
             android:weightSum="6">
             <TextView
@@ -60,15 +60,19 @@
         </LinearLayout>
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingTop="20dp">
             <CheckedTextView
                 android:id="@+id/open_now"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:text="@string/open_now"
+                android:gravity="center"
                 android:textSize="@dimen/text_size"
                 android:checked="true"
+                android:layout_alignTop="@+id/venue_rating"
+                android:layout_alignBottom="@+id/venue_rating"
                 android:checkMark="?android:attr/listChoiceIndicatorMultiple"/>
             <RatingBar
                 style="@style/RatingBar"

@@ -1,5 +1,7 @@
 package com.example.aldrin.places.PlacesDetailsJsonClasses;
 
+import java.util.List;
+
 /**
  * Created by aldrin on 18/8/16.
  */
@@ -11,6 +13,11 @@ public class Result {
     private Geometry geometry;
     private String international_phone_number;
     private OpeningHours opening_hours;
+    private List<Photo> photos;
+
+    public List<Photo> getPhotos() {
+        return photos;
+    }
 
     public String getName() {
         return name;

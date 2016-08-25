@@ -50,13 +50,16 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_settings">Settings</string>
+    <string name="action_update_radius">Update radius</string>
     <string name="title_activity_user_home">UserHomeActivity</string>
     <string name="title_activity_userhome">UserhomeActivity</string>
     <string name="google_places_web_key">AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao</string>
-    <string name="default_search_radius">500</string>
+    <string name="default_search_radius">5000</string>
     <string name="wrong_passcode">Wrong passcode</string>
     <string name="open_now">Open now</string>
     <string name="restaurant_name">Restaurant Name</string>
     <string name="nearby_search_url"><![CDATA[https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%1$s,%2$s&radius=%3$s&type=%4$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
+    <string name="places_details_url"><![CDATA[https://maps.googleapis.com/maps/api/place/details/json?placeid=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
+    <string name="places_image_url"><![CDATA[https://maps.googleapis.com/maps/api/place/photo?photoreference=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
+    <string name="image_url"><![CDATA[https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
 </resources>

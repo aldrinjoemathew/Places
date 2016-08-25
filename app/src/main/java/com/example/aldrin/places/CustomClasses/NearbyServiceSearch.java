@@ -3,7 +3,6 @@ package com.example.aldrin.places.CustomClasses;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.util.Log;
 
 import com.example.aldrin.places.AccountManagement.UserManager;
@@ -25,8 +24,8 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
 
     private HashMap<String, String> mData = new HashMap<String, String>();
     private Context mContext;
-    private static final String TAG_ERROR = "error";
-    private static final String TAG_INFO = "info";
+    private final String TAG_ERROR = "error";
+    private final String TAG_INFO = "info";
     private UserManager mUserManager;
 
     /**
@@ -93,7 +92,7 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
             Log.i(TAG_INFO, String.valueOf(R.string.error));
             return;
         }
-        mUserManager.updateApiResponse(response);
+        mUserManager.updateNearbyResponse(response);
         broadcastLocationUpdate();
     }
 
