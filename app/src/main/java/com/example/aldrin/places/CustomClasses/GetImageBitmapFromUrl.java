@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,14 +20,23 @@ public class GetImageBitmapFromUrl extends AsyncTask<String, Void, Bitmap>{
 
     private static final String TAG_ERROR = "error";
     public ImageResponse mImageResponse;
+    private ProgressBar mProgressBar;
+    private String mImageUrl;
 
-    public GetImageBitmapFromUrl() {
-
+    public GetImageBitmapFromUrl(ProgressBar progressBar) {
+        mProgressBar = progressBar;
     }
+
+    @Override
+    protected void onPreExecute() {
+        mProgressBar.setVisibility(View.VISIBLE);
+    }
+
     @Override
     protected Bitmap doInBackground(String... urls) {
         try {
-            URL url = new URL(urls[0]);
+            mImageUrl = urls[0];
+            URL url = new URL(mImageUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
             connection.connect();
@@ -44,13 +55,14 @@ public class GetImageBitmapFromUrl extends AsyncTask<String, Void, Bitmap>{
             Log.e(TAG_ERROR, "Bitmap returned null value");
             return;
         }
-        mImageResponse.loadImage(bitmap);
+        mProgressBar.setVisibility(View.GONE);
+        mImageResponse.loadImage(mImageUrl, bitmap);
     }
 
     /**
      * Interface is used to pass the data from background thread to main thread.
      */
     public interface ImageResponse {
-        void loadImage(Bitmap output);
+        void loadImage(String url, Bitmap output);
     }
 }

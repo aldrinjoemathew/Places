@@ -8,11 +8,92 @@
     android:gravity="center_horizontal"
     tools:context="com.example.aldrin.places.Activities.PlacesDetailsActivity">
 
-    <android.support.v4.view.ViewPager
-        android:id="@+id/image_view_pager"
-        android:layout_width="wrap_content"
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+        <include
+            layout="@layout/layout_toolbar"
+            tools:layout_editor_absoluteX="0dp"
+            tools:layout_editor_absoluteY="0dp"
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/toolbar_height">
+        </include>
+    </android.support.design.widget.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:elevation="@dimen/elevation"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+                <android.support.v4.view.ViewPager
+                    android:id="@+id/image_view_pager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-    </android.support.v4.view.ViewPager>
-
+                </android.support.v4.view.ViewPager>
+                <ImageView
+                    android:id="@+id/image_not_available"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/image_no_image_available"
+                    android:visibility="invisible"/>
+                <ImageView
+                    android:id="@+id/ic_forward"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_move_forward"
+                    android:layout_gravity="center_vertical|right"/>
+                <ImageView
+                    android:id="@+id/ic_backward"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_move_backward"
+                    android:layout_gravity="center_vertical|left"/>
+            </FrameLayout>
+            <TextView
+                android:id="@+id/text_view_restaurant_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="25sp"
+                android:textStyle="bold"
+                android:textColor="#000000"
+                android:layout_gravity="center_horizontal" />
+            <TextView
+                android:id="@+id/text_view_restaurant_address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textAllCaps="true"
+                android:layout_gravity="center_horizontal"/>
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal">
+                <ImageView
+                    android:id="@+id/image_make_call"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_call_black_24dp"/>
+                <TextView
+                    android:id="@+id/restaurant_phone_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="15sp"
+                    android:layout_alignTop="@id/image_make_call"
+                    android:layout_alignBottom="@id/image_make_call"
+                    android:layout_toRightOf="@id/image_make_call"/>
+            </RelativeLayout>
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

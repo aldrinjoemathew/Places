@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.NumberPicker;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -39,6 +38,7 @@ import com.example.aldrin.places.Fragments.NearbyPlacesFragment;
 import com.example.aldrin.places.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
@@ -49,12 +49,13 @@ public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        com.google.android.gms.location.LocationListener {
+        LocationListener{
 
     private static final int GET_FROM_GALLERY = 1;
     private static final String TAG_ERROR = "error";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
+    private Context mContext;
     private Button btnSubmitRadius;
     private NumberPicker mPickRadius;
     private TextView tvUser;
@@ -74,12 +75,13 @@ public class UserhomeActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_userhome);
+        mContext = this;
         setViewItems();
         getLastLocation();
         imageViewProfile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+                changeProfilePic();
             }
         });
         mLocationRequest = new LocationRequest();
@@ -190,7 +192,7 @@ public class UserhomeActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
+                // If request is cancelled, the mPlacesDetails arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
@@ -257,10 +259,26 @@ public class UserhomeActivity extends AppCompatActivity
         }
     }
 
+
+    /**
+     * Method to change the user's profile picture.
+     */
+    void changeProfilePic() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_READ_STORAGE);
+        }
+        startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+    }
+
+    /**
+     * Update radius on clicking the submit button.
+     * Dismiss popup window.
+     */
     private View.OnClickListener submitRadius = new View.OnClickListener() {
         public void onClick(View v) {
             mPopupWindow.dismiss();
-
             String radius = mPickRadius.getDisplayedValues()[mPickRadius.getValue()];
             mUserManager.updateSearchRadius(mUserEmail, radius);
             getNearbyRestaurants();
