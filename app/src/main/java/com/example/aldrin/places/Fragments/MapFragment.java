@@ -96,6 +96,7 @@ public class MapFragment extends Fragment {
         mGoogleMap.clear();
         mContext.unregisterReceiver(locationUpdateReceiver);
     }
+
     /**
      * Broadcast receiver called when location details are changed.
      */

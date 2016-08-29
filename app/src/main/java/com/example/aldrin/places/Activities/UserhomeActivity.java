@@ -2,8 +2,10 @@ package com.example.aldrin.places.Activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
@@ -35,6 +37,7 @@ import com.example.aldrin.places.AccountManagement.UserManager;
 import com.example.aldrin.places.CustomClasses.NearbyServiceSearch;
 import com.example.aldrin.places.Fragments.FavouritePlacesFragment;
 import com.example.aldrin.places.Fragments.NearbyPlacesFragment;
+import com.example.aldrin.places.Fragments.ProfileFragment;
 import com.example.aldrin.places.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -49,15 +52,15 @@ public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener{
+        LocationListener,
+        ProfileFragment.OnProfilePicChangedListener{
 
     private static final int GET_FROM_GALLERY = 1;
     private static final String TAG_ERROR = "error";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
+    private static final String TAG_INFO = "info";
     private Context mContext;
-    private Button btnSubmitRadius;
-    private NumberPicker mPickRadius;
     private TextView tvUser;
     private TextView tvEmail;
     private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
@@ -69,7 +72,7 @@ public class UserhomeActivity extends AppCompatActivity
     private NearbyServiceSearch mNearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
-    private PopupWindow mPopupWindow;
+    private MenuItem mPreviousMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,18 +107,21 @@ public class UserhomeActivity extends AppCompatActivity
             Uri selectedImage = data.getData();
             mUserManager.changeProfilePic(mUserEmail, selectedImage);
             displayProfilePic();
+            changeImageInProfileFragment();
         }
     }
 
     @Override
     protected void onStart() {
         mGoogleApiClient.connect();
+        mContext.registerReceiver(profileImageUpdateReceiver, new IntentFilter("image_updat"));
         super.onStart();
     }
 
     @Override
     protected void onStop() {
         mGoogleApiClient.disconnect();
+        mContext.unregisterReceiver(profileImageUpdateReceiver);
         super.onStop();
     }
 
@@ -136,6 +142,11 @@ public class UserhomeActivity extends AppCompatActivity
             closeDrawer();
             return true;
         }
+        item.setChecked(true);
+        if (mPreviousMenuItem != null) {
+            mPreviousMenuItem.setChecked(false);
+        }
+        mPreviousMenuItem = item;
         int id = item.getItemId();
         android.support.v4.app.FragmentTransaction fragmentTransaction = getSupportFragmentManager()
                 .beginTransaction();
@@ -148,7 +159,8 @@ public class UserhomeActivity extends AppCompatActivity
         } else if (id == R.id.nav_find_service) {
 
         } else if (id == R.id.nav_profile) {
-
+            fragmentTransaction
+                    .replace(R.id.content_frame, ProfileFragment.newInstance(), ProfileFragment.TAG).commit();
         } else if (id == R.id.nav_logout) {
             mUserManager.logoutUser();
         }
@@ -213,52 +225,25 @@ public class UserhomeActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Change profile pic in navigation drawer when profile pic in ProfileFragment is changed.
+     * Overrides the onProfilePicChanged method in the
+     * OnProfilePicChangedListener interface declared in ProfileFragment.
+     */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.userhome, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_update_radius:
-                initiatePopupWindow();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+    public void onProfilePicChanged() {
+        displayProfilePic();
     }
 
     /**
-     * Initiate and display popup window.
+     * Broadcast receiver called when location details are changed.
      */
-    private void initiatePopupWindow() {
-        try {
-            LayoutInflater inflater = (LayoutInflater) UserhomeActivity.this
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View layout = inflater.inflate(R.layout.popup_update_radius,
-                    (ViewGroup) findViewById(R.id.popup_radius));
-            mPickRadius = (NumberPicker) layout.findViewById(R.id.numberPicker);
-            mPickRadius.setDisplayedValues(new String[] {"100", "500", "1000", "2500", "5000"});
-            mPickRadius.setMinValue(0);
-            mPickRadius.setMaxValue(4);
-            String radius = mUserManager.getSearchRadius(mUserEmail);
-            int currentRadiusIndex = Arrays.asList(mPickRadius.getDisplayedValues()).indexOf(radius);
-            mPickRadius.setValue(currentRadiusIndex);
-            mPopupWindow = new PopupWindow(layout);
-            mPopupWindow.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
-            mPopupWindow.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
-            mPopupWindow.showAtLocation(layout, Gravity.CENTER, 0, 0);
-            btnSubmitRadius = (Button) layout.findViewById(R.id.radius_update_button);
-            btnSubmitRadius.setOnClickListener(submitRadius);
-
-        } catch (Exception e) {
-            e.printStackTrace();
+    BroadcastReceiver profileImageUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            displayProfilePic();
         }
-    }
-
+    };
 
     /**
      * Method to change the user's profile picture.
@@ -270,27 +255,6 @@ public class UserhomeActivity extends AppCompatActivity
                     MY_PERMISSIONS_READ_STORAGE);
         }
         startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
-    }
-
-    /**
-     * Update radius on clicking the submit button.
-     * Dismiss popup window.
-     */
-    private View.OnClickListener submitRadius = new View.OnClickListener() {
-        public void onClick(View v) {
-            mPopupWindow.dismiss();
-            String radius = mPickRadius.getDisplayedValues()[mPickRadius.getValue()];
-            mUserManager.updateSearchRadius(mUserEmail, radius);
-            getNearbyRestaurants();
-        }
-    };
-
-    /**
-     * Sends a broadcast on location update.
-     */
-    void broadcastLocationUpdate() {
-        Intent locationUpdate = new Intent("location_update");
-        this.sendBroadcast(locationUpdate);
     }
 
     /**
@@ -384,7 +348,7 @@ public class UserhomeActivity extends AppCompatActivity
     /**
      * Method to display user's profile image.
      */
-    private void displayProfilePic() {
+    public void displayProfilePic() {
         Uri profileImage;
         try {
             profileImage = mUserManager.getProfilePic(mUserEmail);
@@ -396,6 +360,23 @@ public class UserhomeActivity extends AppCompatActivity
             imageViewProfile.setImageURI(profileImage);
         } catch (NullPointerException e) {
             Log.e(TAG_ERROR, e.toString());
+        }
+    }
+
+    /**
+     * Change the profile image in ProfileFragment when profile image is
+     * changed from navigation drawer item.
+     */
+    private void changeImageInProfileFragment() {
+        try {
+            ProfileFragment pf = (ProfileFragment) getSupportFragmentManager().findFragmentByTag(ProfileFragment.TAG);
+            Boolean vis = pf.isVisible();
+            Log.i("visible", vis.toString());
+            if (vis) {
+                pf.displayProfilePic();
+            }
+        } catch (NullPointerException e) {
+            Log.i(TAG_INFO, "ProfileFragment is not loaded");
         }
     }
 }

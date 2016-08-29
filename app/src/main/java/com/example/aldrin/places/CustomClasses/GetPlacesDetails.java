@@ -38,7 +38,6 @@ public class GetPlacesDetails extends AsyncTask<Void, Void, String>{
      * Letting know other activities that background process have started.
      */
     protected void onPreExecute() {
-
     }
 
     /**
