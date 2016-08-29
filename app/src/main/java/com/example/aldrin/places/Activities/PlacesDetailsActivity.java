@@ -57,7 +57,11 @@ public class PlacesDetailsActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_places_details);
-
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
+        this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        this.getSupportActionBar().setDisplayShowHomeEnabled(true);
+        mToolbar.setNavigationIcon(R.drawable.ic_move_backward);
         mUserManager = new UserManager(getApplicationContext());
         mPlacesDetailsProgress = (ProgressBar) findViewById(R.id.places_details_progress);
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);

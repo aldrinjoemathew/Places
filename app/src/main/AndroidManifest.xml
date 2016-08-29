@@ -49,7 +49,9 @@
             android:label="@string/title_activity_userhome"
             android:theme="@style/AppTheme" />
 
-        <activity android:name=".Activities.PlacesDetailsActivity" />
+        <activity
+            android:name=".Activities.PlacesDetailsActivity"
+            android:parentActivityName=".Activities.UserhomeActivity"/>
 
     </application>
 
