@@ -233,7 +233,7 @@ public class MapFragment extends Fragment {
                 TextView tvTitle = (TextView) view.findViewById(R.id.rest_name_text_view);
                 TextView tvDistance = (TextView) view.findViewById(R.id.distance_text_view);
                 TextView tvAddress = (TextView) view.findViewById(R.id.address_text_view);
-                RatingBar ratingVenue = (RatingBar) view.findViewById(R.id.venue_rating);
+                RatingBar ratingVenue = (RatingBar) view.findViewById(R.id.ratingbar_venue);
                 String title = venue.getName();
                 String address = venue.getVicinity();
                 String distance = distanceFromCurrentPosition();

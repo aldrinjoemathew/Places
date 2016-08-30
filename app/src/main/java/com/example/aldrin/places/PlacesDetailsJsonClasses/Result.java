@@ -14,6 +14,21 @@ public class Result {
     private String international_phone_number;
     private OpeningHours opening_hours;
     private List<Photo> photos;
+    private String website;
+    private String url;
+    private float rating;
+
+    public float getRating() {
+        return rating;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
 
     public List<Photo> getPhotos() {
         return photos;

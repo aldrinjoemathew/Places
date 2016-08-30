@@ -49,8 +49,20 @@
         <item name="colorControlActivated">#e99a06</item>
     </style>
 
+    <style name="Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">?android:attr/listDivider</item>
+    </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="MyTheme" parent="AppTheme" />
+
+    <style name="ToolbarStyle">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
 
 </resources>

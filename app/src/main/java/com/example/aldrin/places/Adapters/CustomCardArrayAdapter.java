@@ -3,6 +3,7 @@ package com.example.aldrin.places.Adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +27,7 @@ import java.util.List;
  */
 
 public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
+    private static final String TAG_ERROR = "error";
     private List<Result> cardVenueList = new ArrayList<Result>();
     private LatLng mPosition;
     public CustomCardArrayAdapter(Context context, int textViewResourceId, LatLng userLocation) {
@@ -60,7 +62,7 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
             viewHolder.tvTitle = (TextView) row.findViewById(R.id.rest_name_text_view);
             viewHolder.tvAddress = (TextView) row.findViewById(R.id.address_text_view);
             viewHolder.tvDistance = (TextView) row.findViewById(R.id.distance_text_view);
-            viewHolder.ratingRestaurant = (RatingBar) row.findViewById(R.id.venue_rating);
+            viewHolder.ratingRestaurant = (RatingBar) row.findViewById(R.id.ratingbar_venue);
             viewHolder.ctvOpen = (CheckedTextView) row.findViewById(R.id.open_now);
             row.setTag(viewHolder);
         } else {
@@ -75,7 +77,7 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
             Boolean isOpenNow = venue.getOpening_hours().getOpen_now();
             viewHolder.ctvOpen.setChecked(isOpenNow);
         } catch (NullPointerException e) {
-            e.printStackTrace();
+            Log.i(TAG_ERROR, "Open now information not available");
         }
         row.setOnClickListener(new View.OnClickListener() {
             @Override

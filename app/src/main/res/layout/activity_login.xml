@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="@color/backgroundColor"
     tools:context="com.example.aldrin.places.Activities.SplashActivity">
     <android.support.design.widget.AppBarLayout
         android:id="@+id/toolbar_holder"
@@ -33,14 +34,14 @@
             android:orientation="vertical">
             <android.support.design.widget.TextInputLayout
                 style="@style/textInputLayoutStyle"
-                android:id="@+id/email_layout"
+                android:id="@+id/til_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:hintTextAppearance="@style/MyHintText"
                 app:errorTextAppearance="@style/error_appearance">
                 <android.support.v7.widget.AppCompatEditText
                     style="@style/MyEditText"
-                    android:id="@+id/email_et"
+                    android:id="@+id/et_email"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:hint="@string/email"
@@ -48,15 +49,15 @@
             </android.support.design.widget.TextInputLayout>
             <android.support.design.widget.TextInputLayout
                 style="@style/textInputLayoutStyle"
-                android:id="@+id/password_layout"
+                android:id="@+id/til_password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/email_layout"
+                android:layout_below="@id/til_email"
                 app:hintTextAppearance="@style/MyHintText"
                 app:errorTextAppearance="@style/error_appearance">
                 <android.support.v7.widget.AppCompatEditText
                     style="@style/MyEditText"
-                    android:id="@+id/password_et"
+                    android:id="@+id/et_password"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:hint="@string/password"
@@ -64,16 +65,16 @@
             </android.support.design.widget.TextInputLayout>
             <android.support.v7.widget.AppCompatButton
                 style="@style/buttonStyle"
-                android:id="@+id/button_login"
+                android:id="@+id/btn_login"
                 android:background="@drawable/button_style"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/login"
-                android:layout_below="@id/password_layout"
-                android:layout_alignLeft="@id/password_layout"
-                android:layout_alignRight="@id/password_layout"/>
-            <TextView
-                android:id="@+id/forgot_pw"
+                android:layout_below="@id/til_password"
+                android:layout_alignLeft="@id/til_password"
+                android:layout_alignRight="@id/til_password"/>
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/tv_forgot_pw"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/forgot_password"
@@ -84,9 +85,9 @@
                 android:layout_marginTop="@dimen/layout_margin_top_button"
                 android:layout_centerHorizontal="true"
                 android:textSize="@dimen/edit_text_size"
-                android:layout_below="@id/button_login"/>
-            <TextView
-                android:id="@+id/title_signup"
+                android:layout_below="@id/btn_login"/>
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/tv_signup_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/new_to_places"
@@ -96,17 +97,17 @@
                 android:layout_marginTop="@dimen/layout_margin_top_button"
                 android:layout_centerHorizontal="true"
                 android:textSize="@dimen/edit_text_size"
-                android:layout_below="@id/forgot_pw"/>
+                android:layout_below="@id/tv_forgot_pw"/>
             <android.support.v7.widget.AppCompatButton
                 style="@style/buttonStyle"
-                android:id="@+id/button_signup"
+                android:id="@+id/btn_signup"
                 android:background="@drawable/button_style"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/signup"
-                android:layout_below="@id/title_signup"
-                android:layout_alignLeft="@id/password_layout"
-                android:layout_alignRight="@id/password_layout"/>
+                android:layout_below="@id/tv_signup_title"
+                android:layout_alignLeft="@id/til_password"
+                android:layout_alignRight="@id/til_password"/>
         </RelativeLayout>
     </ScrollView>
 

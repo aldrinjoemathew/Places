@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_horizontal"
+    android:background="@color/backgroundColor"
     tools:context="com.example.aldrin.places.Activities.PlacesDetailsActivity">
     <RelativeLayout
         android:layout_width="match_parent"
@@ -14,19 +15,20 @@
         android:orientation="vertical">
         <android.support.v7.widget.Toolbar
             android:id="@id/toolbar"
+            app:titleTextColor="@android:color/white"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/colorPrimary">
         </android.support.v7.widget.Toolbar>
         <ViewStub
-            android:id="@+id/places_details_content"
+            android:id="@+id/content_places_details"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/toolbar"
             android:layout="@layout/layout_place_details"/>
     </RelativeLayout>
     <ProgressBar
-        android:id="@+id/places_details_progress"
+        android:id="@+id/progressbar_places_details"
         style="?android:attr/progressBarStyleLarge"
         android:layout_gravity="center"
         android:layout_width="wrap_content"

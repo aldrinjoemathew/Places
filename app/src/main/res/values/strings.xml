@@ -62,4 +62,7 @@
     <string name="places_details_url"><![CDATA[https://maps.googleapis.com/maps/api/place/details/json?placeid=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
     <string name="places_image_url"><![CDATA[https://maps.googleapis.com/maps/api/place/photo?photoreference=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
     <string name="image_url"><![CDATA[https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
+    <string name="not_available">Not available</string>
+    <string name="details">Details</string>
+    <string name="working_time">Working time</string>
 </resources>

@@ -15,18 +15,30 @@ import com.example.aldrin.places.AccountManagement.UserManager;
 import com.example.aldrin.places.CustomClasses.CustomTextWatcher;
 import com.example.aldrin.places.R;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * Activity to perform login operation.
  * Provide user options to signup or reset password.
  */
 public class LoginActivity extends AppCompatActivity {
-    public EditText etEmail;
-    private EditText etPassword;
-    private Button btnLogin;
-    private Button btnSignup;
-    private TextView tvForgotPassword;
-    private TextInputLayout layoutPassword;
-    private TextInputLayout layoutEmail;
+
+    @BindView(R.id.et_email)
+    EditText etEmail;
+    @BindView(R.id.et_password)
+    EditText etPassword;
+    @BindView(R.id.tv_forgot_pw)
+    TextView tvForgotPassword;
+    @BindView(R.id.til_email)
+    TextInputLayout tilEmail;
+    @BindView(R.id.til_password)
+    TextInputLayout tilPassword;
+    @BindView(R.id.btn_login)
+    Button btnLogin;
+    @BindView(R.id.btn_signup)
+    Button btnSignup;
+
     private UserManager mUserManager;
     private Context mCurrentContext = this;
 
@@ -34,24 +46,13 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        ButterKnife.bind(this);
         mUserManager = new UserManager(getApplicationContext());
-        bindXmlFields();
+        etEmail.addTextChangedListener(new CustomTextWatcher(tilEmail));
+        etPassword.addTextChangedListener(new CustomTextWatcher(tilPassword));
         btnLogin.setOnClickListener(verifyLogin);
-        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent resetPasswordIntent = new Intent(mCurrentContext,ResetPasswordActivity.class);
-                startActivity(resetPasswordIntent);
-            }
-        });
-        btnSignup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent signupIntent = new Intent(mCurrentContext,SignupActivity.class);
-                startActivity(signupIntent);
-            }
-        });
+        tvForgotPassword.setOnClickListener(resetPassword);
+        btnSignup.setOnClickListener(signup);
     }
 
     /**
@@ -62,34 +63,34 @@ public class LoginActivity extends AppCompatActivity {
         public void onClick(View v) {
             String email = etEmail.getText().toString();
             String password = etPassword.getText().toString();
-            layoutEmail.setError(null);
-            layoutPassword.setError(null);
-
+            tilEmail.setError(null);
+            tilPassword.setError(null);
             if (TextUtils.isEmpty(email))
-                layoutEmail.setError(getString(R.string.error_email_empty));
+                tilEmail.setError(getString(R.string.error_email_empty));
             else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches())
-                layoutEmail.setError(getString(R.string.error_email_invalid));
+                tilEmail.setError(getString(R.string.error_email_invalid));
             else if (mUserManager.checkUserExists(email))
                 loginToAccount(email, password);
             else
-                layoutEmail.setError(getString(R.string.error_user_not_exists));
+                tilEmail.setError(getString(R.string.error_user_not_exists));
         }
     };
 
-    /**
-     * Bind XML fields with Java code.
-     */
-    private void bindXmlFields() {
-        btnLogin = (Button) findViewById(R.id.button_login);
-        btnSignup = (Button) findViewById(R.id.button_signup);
-        tvForgotPassword = (TextView) findViewById(R.id.forgot_pw);
-        etEmail = (EditText) findViewById(R.id.email_et);
-        etPassword = (EditText) findViewById(R.id.password_et);
-        layoutPassword = (TextInputLayout) findViewById(R.id.password_layout);
-        layoutEmail = (TextInputLayout) findViewById(R.id.email_layout);
-        etEmail.addTextChangedListener(new CustomTextWatcher(layoutEmail));
-        etPassword.addTextChangedListener(new CustomTextWatcher(layoutPassword));
-    }
+    Button.OnClickListener resetPassword = new Button.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent resetPasswordIntent = new Intent(mCurrentContext,ResetPasswordActivity.class);
+            startActivity(resetPasswordIntent);
+        }
+    };
+
+    Button.OnClickListener signup = new Button.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent signupIntent = new Intent(mCurrentContext,SignupActivity.class);
+            startActivity(signupIntent);
+        }
+    };
 
     /**
      * Performs login to user account.
@@ -105,8 +106,8 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(loginIntent);
             finish();
         } else {
-            layoutPassword.setErrorEnabled(true);
-            layoutPassword.setError(getString(R.string.error_password_wrong));
+            tilPassword.setErrorEnabled(true);
+            tilPassword.setError(getString(R.string.error_password_wrong));
         }
     }
 }
