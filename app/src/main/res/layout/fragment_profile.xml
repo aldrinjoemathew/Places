@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    tools:context="com.example.aldrin.places.Fragments.ProfileFragment">
+    tools:context=".ui.fragments.ProfileFragment">
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -95,6 +95,29 @@
                     android:inputType="phone"
                     android:hint="@string/phone_number"/>
             </android.support.design.widget.TextInputLayout>
+            <TextView
+                style="@style/textInputLayoutStyle"
+                android:id="@+id/tv_radius_title"
+                android:text="Radius"
+                android:textSize="20sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/phone_number_layout"/>
+            <android.support.v7.widget.AppCompatSeekBar
+                style="@style/textInputLayoutStyle"
+                android:id="@+id/seekbar_radius"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_radius_title"
+                android:max="5000"/>
+            <TextView
+                android:id="@+id/tv_radius"
+                android:textSize="@dimen/text_size"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/seekbar_radius"/>
             <android.support.v7.widget.AppCompatButton
                 style="@style/buttonStyle"
                 android:id="@+id/button_submit"
@@ -102,7 +125,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/submit"
-                android:layout_below="@id/phone_number_layout"
+                android:layout_below="@id/tv_radius"
                 android:layout_alignLeft="@id/phone_number_layout"
                 android:layout_alignRight="@id/phone_number_layout"/>
         </RelativeLayout>

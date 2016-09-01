@@ -65,4 +65,7 @@
     <string name="not_available">Not available</string>
     <string name="details">Details</string>
     <string name="working_time">Working time</string>
+    <string name="phone_number_not_available">Phone number not available</string>
+    <string name="website_not_available">Website is not available</string>
+    <string name="reviews">Reviews</string>
 </resources>
