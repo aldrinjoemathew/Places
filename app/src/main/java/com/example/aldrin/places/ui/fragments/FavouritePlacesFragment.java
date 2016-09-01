@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,10 +81,14 @@ public class FavouritePlacesFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.i("info", " " + requestCode + " " + resultCode + " ");
         if (requestCode == 1) {
-            if(resultCode == RESULT_OK){
+            if(resultCode == 1){
                 Boolean changed = data.getBooleanExtra("valueChanged", false);
                 if (changed) {
+                    mRecyclerView.removeAllViews();
+                    FavoritePlacesAdapter fav = (FavoritePlacesAdapter) mRecyclerView.getAdapter();
+                    fav.clearData();
                     getFavoritesFromSdCard();
                     displayFavorites();
                 }
@@ -98,7 +103,7 @@ public class FavouritePlacesFragment extends Fragment {
         if (mUserManger.getFavorite(mUserEmail) != null) {
             mRecyclerView.setHasFixedSize(true);
             mLayoutManager = new LinearLayoutManager(getContext());
-            mAdapter = new FavoritePlacesAdapter(getContext(), cardVenueList);
+            mAdapter = new FavoritePlacesAdapter(getContext(), cardVenueList, this);
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(mAdapter);
         }

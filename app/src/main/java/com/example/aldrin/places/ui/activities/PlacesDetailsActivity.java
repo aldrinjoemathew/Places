@@ -1,5 +1,6 @@
 package com.example.aldrin.places.ui.activities;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -178,13 +179,18 @@ public class PlacesDetailsActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
         if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
                 mPlacesDetails.getPlace_id())) {
             Intent intent = new Intent();
             intent.putExtra("valueChanged",true);
-            setResult(RESULT_OK, intent);
+            if (getParent() == null) {
+                setResult(1, intent);
+            }
+            else {
+                getParent().setResult(1, intent);
+            }
         }
+        super.onBackPressed();
     }
 
     /**
@@ -193,7 +199,7 @@ public class PlacesDetailsActivity extends AppCompatActivity
     View.OnClickListener navigateUp = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            PlacesDetailsActivity.super.onBackPressed();
+            onBackPressed();
         }
     };
 

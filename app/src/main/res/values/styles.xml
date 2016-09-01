@@ -55,6 +55,10 @@
         <item name="android:background">?android:attr/listDivider</item>
     </style>
 
+    <style name="NavigationDrawerStyle">
+        <item name="android:textSize">@dimen/text_size</item>
+        <item name="android:listPreferredItemHeightSmall">40dp</item><!-- item size in menu-->
+    </style>
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />

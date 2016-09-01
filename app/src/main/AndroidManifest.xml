@@ -51,8 +51,7 @@
             android:theme="@style/AppTheme" />
 
         <activity
-            android:name=".ui.activities.PlacesDetailsActivity"
-            android:parentActivityName=".ui.activities.UserhomeActivity"/>
+            android:name=".ui.activities.PlacesDetailsActivity"/>
 
     </application>
 
