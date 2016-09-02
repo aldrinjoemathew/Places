@@ -1,6 +1,5 @@
 package com.example.aldrin.places.ui.activities;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -11,8 +10,6 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.support.v4.util.LruCache;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -28,17 +25,15 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.ReviewAdapter;
+import com.example.aldrin.places.helpers.CacheStorage;
 import com.example.aldrin.places.helpers.GetImageBitmapFromUrl;
 import com.example.aldrin.places.helpers.GetPlacesDetails;
+import com.example.aldrin.places.helpers.StorageOnSdCard;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.GetFromJson;
 import com.example.aldrin.places.models.placesdetails.Result;
 import com.google.gson.Gson;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 
 import butterknife.BindView;
@@ -49,12 +44,13 @@ public class PlacesDetailsActivity extends AppCompatActivity
         implements GetPlacesDetails.AsyncResponse,
         GetImageBitmapFromUrl.ImageResponse{
 
-    private static final String SD_PATH = Environment.getExternalStorageDirectory().getPath();
     private static final String TAG_ERROR = "error";
+    private final String mFolderPath = "Favorites";
     private GetPlacesDetails getPlacesDetails;
     private GetImageBitmapFromUrl getImageBitmap;
+    private StorageOnSdCard mSdCard;
     private Result mPlacesDetails;
-    private LruCache<String, Bitmap> mMemoryCache;
+    private CacheStorage cacheBitmap;
     private UserManager mUserManager;
     private ViewStub vsPlacesDetailsContent;
     private View mView;
@@ -66,7 +62,6 @@ public class PlacesDetailsActivity extends AppCompatActivity
     RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-
 
     @BindView(R.id.layout_phone_number)
     LinearLayout mLayoutPhoneNumber;
@@ -108,19 +103,29 @@ public class PlacesDetailsActivity extends AppCompatActivity
         mToolbar.setNavigationOnClickListener(navigateUp);
         mUserManager = new UserManager(getApplicationContext());
         mPlacesDetailsProgress = (ProgressBar) findViewById(R.id.progressbar_places_details);
-        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        final int cacheSize = maxMemory / 8;
+
         String placeId = getIntent().getStringExtra("place_id");
-        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap) {
-                return bitmap.getByteCount() / 1024;
-            }
-        };
+        cacheBitmap = new CacheStorage();
         getPlacesDetails = new GetPlacesDetails(this, placeId);
         getPlacesDetails.delegate = this;
         getPlacesDetails.execute();
         mPlacesDetailsProgress.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
+                mPlacesDetails.getPlace_id())) {
+            Intent intent = new Intent();
+            intent.putExtra("valueChanged",true);
+            if (getParent() == null) {
+                setResult(1, intent);
+            }
+            else {
+                getParent().setResult(1, intent);
+            }
+        }
+        super.onBackPressed();
     }
 
     @Override
@@ -167,30 +172,65 @@ public class PlacesDetailsActivity extends AppCompatActivity
             String weekdayText = sb.toString() + "\b";
             tvWeekdayText.setText(weekdayText);
         } catch (NullPointerException e) {
-            tvWeekdayText.setText("Weekday information is not available");
+            tvWeekdayText.setText(R.string.weekday_info_not_available);
         }
         try {
             ratingVenue.setRating(mPlacesDetails.getRating());
         } catch (NullPointerException e) {
-            Log.i(TAG_ERROR, "Rating is not available");
+            Log.i(TAG_ERROR, getString(R.string.rating_not_available));
         }
         displayReviews();
     }
 
     @Override
-    public void onBackPressed() {
-        if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
-                mPlacesDetails.getPlace_id())) {
-            Intent intent = new Intent();
-            intent.putExtra("valueChanged",true);
-            if (getParent() == null) {
-                setResult(1, intent);
-            }
-            else {
-                getParent().setResult(1, intent);
-            }
+    public void loadImage(String imageKey, Bitmap imageBitmap) {
+        imgRestaurant.setImageBitmap(imageBitmap);
+        cacheBitmap.addBitmapToMemoryCache(imageKey, imageBitmap);
+    }
+
+    @OnClick(R.id.layout_diretion)
+    public void showDirections() {
+        com.example.aldrin.places.models.placesdetails.Location location =
+                mPlacesDetails.getGeometry().getLocation();
+        String loc[] = mUserManager.getLocation();
+        final Intent intent = new
+                Intent(Intent.ACTION_VIEW,Uri.parse("http://maps.google.com/maps?" +
+                "saddr="+ loc[0] + "," + loc[1] + "&daddr=" + location.getLat() + "," +
+                location.getLng()));
+        intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.layout_web_address)
+    public void goToWebsite() {
+        Intent viewIntent = new Intent("android.intent.action.VIEW",
+                Uri.parse(mPlacesDetails.getWebsite()));
+        startActivity(viewIntent);
+    }
+
+    @OnClick(R.id.layout_phone_number)
+    public void makecall(){
+        String phoneNumber = mPlacesDetails.getFormatted_phone_number();
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.setData(Uri.parse("tel:" + phoneNumber));
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.iv_add_favorite)
+    public void addOrRemoveFavorite() {
+        String placeId = mPlacesDetails.getPlace_id();
+        mSdCard = new StorageOnSdCard();
+        if (mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
+            mUserManager.removeFavorite(mUserManager.getUserEmail(), placeId);
+            ivAddFavorite.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
+            mSdCard.removeFromSdCard(mFolderPath,placeId);
+        } else {
+            mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
+            ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            Gson gson = new Gson();
+            String placeDetails = gson.toJson(mPlacesDetails);
+            mSdCard.addToSdCard(mFolderPath, placeId, placeDetails);
         }
-        super.onBackPressed();
     }
 
     /**
@@ -236,80 +276,6 @@ public class PlacesDetailsActivity extends AppCompatActivity
         }
     }
 
-    @OnClick(R.id.layout_diretion)
-    public void showDirections() {
-        com.example.aldrin.places.models.placesdetails.Location location =
-                mPlacesDetails.getGeometry().getLocation();
-        String loc[] = mUserManager.getLocation();
-        final Intent intent = new
-                Intent(Intent.ACTION_VIEW,Uri.parse("http://maps.google.com/maps?" +
-                "saddr="+ loc[0] + "," + loc[1] + "&daddr=" + location.getLat() + "," +
-                location.getLng()));
-        intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
-        startActivity(intent);
-    }
-
-    @OnClick(R.id.layout_web_address)
-    public void goToWebsite() {
-        Intent viewIntent = new Intent("android.intent.action.VIEW",
-                Uri.parse(mPlacesDetails.getWebsite()));
-        startActivity(viewIntent);
-    }
-
-    @OnClick(R.id.layout_phone_number)
-    public void makecall(){
-        String phoneNumber = mPlacesDetails.getFormatted_phone_number();
-        Intent intent = new Intent(Intent.ACTION_DIAL);
-        intent.setData(Uri.parse("tel:" + phoneNumber));
-        startActivity(intent);
-    }
-
-    @OnClick(R.id.iv_add_favorite)
-    public void addOrRemoveFavorite() {
-        String placeId = mPlacesDetails.getPlace_id();
-        if (mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
-            mUserManager.removeFavorite(mUserManager.getUserEmail(), placeId);
-            ivAddFavorite.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
-            removeFromSdCard(placeId);
-        } else {
-            mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
-            ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
-            addToSdCard(placeId);
-        }
-    }
-
-    private void addToSdCard(String placeId) {
-        try {
-            Gson gson = new Gson();
-            String placeDetails = gson.toJson(mPlacesDetails);
-            File favDir = new File(SD_PATH, "Favorites");
-            favDir.mkdirs();
-            File myFile = new File(favDir, placeId);
-            myFile.createNewFile();
-            FileOutputStream fOut = new FileOutputStream(myFile);
-            OutputStreamWriter myOutWriter =
-                    new OutputStreamWriter(fOut);
-            myOutWriter.append(placeDetails);
-            myOutWriter.close();
-            fOut.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void removeFromSdCard(String placeId) {
-        File favDir = new File(SD_PATH, "Favorites");
-        favDir.mkdirs();
-        File myFile = new File(favDir, placeId);
-        myFile.delete();
-    }
-
-    @Override
-    public void loadImage(String imageKey, Bitmap imageBitmap) {
-        imgRestaurant.setImageBitmap(imageBitmap);
-        addBitmapToMemoryCache(imageKey, imageBitmap);
-    }
-
     /**
      * Method retrieve bitmap from cache if present.
      * Otherwise executes a background task inorder to load the image from a remote URL.
@@ -318,7 +284,7 @@ public class PlacesDetailsActivity extends AppCompatActivity
     public void loadBitmap(String url) {
         final String imageKey = url;
 
-        final Bitmap bitmap = getBitmapFromMemCache(imageKey);
+        final Bitmap bitmap = cacheBitmap.getBitmapFromMemCache(imageKey);
         if (bitmap != null) {
             loadImage(imageKey, bitmap);
             mImageProgressBar.setVisibility(View.GONE);
@@ -330,27 +296,10 @@ public class PlacesDetailsActivity extends AppCompatActivity
         }
     }
 
-    /**
-     * Method to add a bitmap image to cache if available.
-     * @param key
-     * @param bitmap
+     /**
+     * To find the distance from current position.
+     * @return
      */
-    public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
-        if (getBitmapFromMemCache(key) == null) {
-            mMemoryCache.put(key, bitmap);
-        }
-    }
-
-    /**
-     * Method to get the bitmap of image stored in the cache storage.
-     * Returns null if bitmap is not available in the cache.
-     * @param key
-     * @return imageBitmap
-     */
-    public Bitmap getBitmapFromMemCache(String key) {
-        return mMemoryCache.get(key);
-    }
-
     private String distanceFromCurrentPosition() {
         Location userLocation = new Location("user_location");
         Location venueLocation = new Location("venue_location");

@@ -13,9 +13,9 @@ import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
-import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
-import com.example.aldrin.places.models.nearby.Result;
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.models.nearby.Result;
+import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.text.DecimalFormat;

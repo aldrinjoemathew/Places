@@ -24,12 +24,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.example.aldrin.places.helpers.UserManager;
+import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.NearbyServiceSearch;
+import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.ui.fragments.FavouritePlacesFragment;
 import com.example.aldrin.places.ui.fragments.NearbyPlacesFragment;
 import com.example.aldrin.places.ui.fragments.ProfileFragment;
-import com.example.aldrin.places.R;
+import com.example.aldrin.places.ui.fragments.ServicesFragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -148,7 +149,8 @@ public class UserhomeActivity extends AppCompatActivity
             fragmentTransaction
                     .replace(R.id.content_frame, FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG).commit();
         } else if (id == R.id.nav_find_service) {
-
+            fragmentTransaction
+                    .replace(R.id.content_frame, ServicesFragment.newInstance(), ServicesFragment.TAG).commit();
         } else if (id == R.id.nav_profile) {
             fragmentTransaction
                     .replace(R.id.content_frame, ProfileFragment.newInstance(), ProfileFragment.TAG).commit();

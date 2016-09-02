@@ -6,8 +6,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.util.LruCache;
 
-import com.example.aldrin.places.ui.fragments.SwipeFragment;
 import com.example.aldrin.places.models.placesdetails.Result;
+import com.example.aldrin.places.ui.fragments.SwipeFragment;
 
 /**
  * Created by aldrin on 26/8/16.

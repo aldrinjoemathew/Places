@@ -7,8 +7,8 @@ import android.view.ViewGroup;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
-import com.example.aldrin.places.models.placesdetails.Review;
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.models.placesdetails.Review;
 
 import java.util.List;
 

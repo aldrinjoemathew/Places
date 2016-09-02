@@ -37,7 +37,6 @@
         <activity
             android:name=".ui.activities.LoginActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".MainActivity" />
         <activity
             android:name=".ui.activities.SignupActivity"
             android:parentActivityName=".ui.activities.LoginActivity" />

@@ -10,8 +10,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.aldrin.places.adapters.PagerAdapter;
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.adapters.PagerAdapter;
 
 /**
  * A simple {@link Fragment} subclass.

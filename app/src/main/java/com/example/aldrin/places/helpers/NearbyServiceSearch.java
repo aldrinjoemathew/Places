@@ -7,6 +7,8 @@ import android.util.Log;
 
 import com.example.aldrin.places.R;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -92,15 +94,7 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
             return;
         }
         mUserManager.updateNearbyResponse(response);
-        broadcastLocationUpdate();
-    }
-
-    /**
-     * Sends a broadcast on location update.
-     */
-    void broadcastLocationUpdate() {
-        Intent locationUpdate = new Intent("location_update");
-        mContext.sendBroadcast(locationUpdate);
+        EventBus.getDefault().post(new LocationUpdateEvent(null));
     }
 
     /**
@@ -112,6 +106,14 @@ public class NearbyServiceSearch extends AsyncTask<Void, Void, String> {
                 mData.get("lat"), mData.get("lng"), mData.get("radius"), mData.get("type"));
         Log.i(TAG_INFO,url);
         return url;
+    }
+
+    public class LocationUpdateEvent {
+        public final String message;
+
+        public LocationUpdateEvent(String message) {
+            this.message = message;
+        }
     }
 
 }

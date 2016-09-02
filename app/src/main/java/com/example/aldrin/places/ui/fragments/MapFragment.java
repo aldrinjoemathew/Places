@@ -1,9 +1,6 @@
 package com.example.aldrin.places.ui.fragments;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
@@ -18,11 +15,12 @@ import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.example.aldrin.places.R;
+import com.example.aldrin.places.helpers.NearbyServiceSearch;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.Geometry;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.models.nearby.Result;
-import com.example.aldrin.places.R;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -33,6 +31,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -48,7 +50,6 @@ public class MapFragment extends Fragment {
     private Marker marker;
     private Context mContext;
     private SupportMapFragment mapFragment;
-    private Boolean loadMap;
     private UserManager mUserManager;
     private Bitmap smallMarker;
 
@@ -80,34 +81,20 @@ public class MapFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadMap = true;
-        mContext.registerReceiver(locationUpdateReceiver, new IntentFilter("location_update"));
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        loadMap = false;
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         mGoogleMap.clear();
-        mContext.unregisterReceiver(locationUpdateReceiver);
+        EventBus.getDefault().unregister(this);
     }
 
-    /**
-     * Broadcast receiver called when location details are changed.
-     */
-    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (loadMap) {
-                updateMap();
-            }
-        }
-    };
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLocationUpdateEvent(NearbyServiceSearch.LocationUpdateEvent event) {
+            updateMap();
+    }
 
     /**
      * Create a custom marker to mark nearby locations.
@@ -195,7 +182,6 @@ public class MapFragment extends Fragment {
         String loc[] = mUserManager.getLocation();
         mPosition = new LatLng(Double.parseDouble(loc[0]), Double.parseDouble(loc[1]));
     }
-
 
     /**
      * A custom class to display info window on clicking on marker.

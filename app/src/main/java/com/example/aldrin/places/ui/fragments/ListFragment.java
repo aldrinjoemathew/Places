@@ -1,9 +1,6 @@
 package com.example.aldrin.places.ui.fragments;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -12,13 +9,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-import com.example.aldrin.places.helpers.UserManager;
+import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.CustomCardArrayAdapter;
+import com.example.aldrin.places.helpers.NearbyServiceSearch;
+import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.models.nearby.Result;
-import com.example.aldrin.places.R;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.Gson;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 
@@ -51,9 +53,7 @@ public class ListFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         mCardList = (ListView) view.findViewById(R.id.places_list_view);
-
         if (mUserManager.getNearbyResponse() != null) {
             showCardList();
         }
@@ -62,24 +62,19 @@ public class ListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        mContext.registerReceiver(locationUpdateReceiver, new IntentFilter("location_update"));
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        mContext.unregisterReceiver(locationUpdateReceiver);
+        EventBus.getDefault().unregister(this);
     }
 
-    /**
-     * Broadcast receiver to get notification when location is updated.
-     */
-    BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            showCardList();
-        }
-    };
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLocationUpdateEvent(NearbyServiceSearch.LocationUpdateEvent event) {
+        showCardList();
+    }
 
     /**
      * Displays venue details as a list of cards.

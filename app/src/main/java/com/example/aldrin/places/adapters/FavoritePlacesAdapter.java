@@ -16,7 +16,6 @@ import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.Result;
 import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
-import com.example.aldrin.places.ui.activities.UserhomeActivity;
 import com.example.aldrin.places.ui.fragments.FavouritePlacesFragment;
 
 import java.text.DecimalFormat;
@@ -98,8 +97,6 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
             String placeId = venues.get(getLayoutPosition()).getPlace_id();
             Intent placesDetailsIntent = new Intent(mContext, PlacesDetailsActivity.class);
             placesDetailsIntent.putExtra("place_id", placeId);
-            /*mContext.startActivity(placesDetailsIntent);*/
-            /*((UserhomeActivity)mContext).startActivityForResult(placesDetailsIntent, 1);*/
             favouritePlacesFragment.startActivityForResult(placesDetailsIntent, 1);
         }
     }
