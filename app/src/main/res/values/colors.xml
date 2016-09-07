@@ -7,4 +7,6 @@
     <color name="textColorHint">@color/colorPrimary</color>
     <color name="editTextColor">@color/colorPrimary</color>
     <color name="backgroundColor">#DDE3EA</color>
+    <color name="cardHighlightColor">#82c9bf</color>
+    <color name="cardNormalColor">#ffffff</color>
 </resources>

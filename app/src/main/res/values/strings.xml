@@ -57,9 +57,13 @@
     <!-- Program related strings -->
     <string name="alphabets">ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="numbers">0123456789</string>
-    <string name="services">hospital,bank,movie_theater,train_station,gym,gas_station,doctor,police,pharmacy</string>
+    <string name="services">hospital,bank,movie_theater,train_station,gym,gas_station,
+        doctor,police,pharmacy,beauty_salon,local_government_office,spa,school,clothing_store,car_repair,parking</string>
+    <string name="services_display_names">Hospital,Bank,Movie theatre,Train station,Gym,
+        Gas station,Doctor,Police,Pharmacy,Beauty salon,Government Offices,Spa,School,Clothing stores,Car repair,Parking</string>
 
     <!-- URL strings -->
+    <string name="google_api_base_url">https://maps.googleapis.com/maps/api/</string>
     <string name="nearby_search_url"><![CDATA[https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%1$s,%2$s&radius=%3$s&type=%4$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
     <string name="places_details_url"><![CDATA[https://maps.googleapis.com/maps/api/place/details/json?placeid=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
     <string name="places_image_url"><![CDATA[https://maps.googleapis.com/maps/api/place/photo?photoreference=%1$s&key=AIzaSyBrM7H8vbqZeMJf9objjEHnCpCt0uWXpao]]></string>
@@ -91,4 +95,7 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="no_results_found">No results found!</string>
+    <string name="no_reviews_yet">No reviews yet</string>
+
 </resources>

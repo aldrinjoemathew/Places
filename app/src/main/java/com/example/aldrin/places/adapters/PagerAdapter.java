@@ -30,7 +30,8 @@ public class PagerAdapter extends FragmentStatePagerAdapter {
                 MapFragment tab1 = new MapFragment();
                 return tab1;
             case 1:
-                ListFragment tab2 = new ListFragment();
+                Boolean isRestaurant = true;
+                ListFragment tab2 = ListFragment.newInstance(isRestaurant);
                 return tab2;
             case 2:
                 GridFragment tab3 = new GridFragment();

@@ -28,7 +28,7 @@
                     android:layout_below="@+id/image_venue"
                     android:padding="@dimen/normal_padding"
                     android:layout_alignParentLeft="true"
-                    android:src="@drawable/ic_favorite_border_black_24dp"/>
+                    android:src="@drawable/ic_favorite"/>
                 <RatingBar
                     android:id="@+id/ratingbar_venue"
                     android:progressDrawable="@drawable/ratingbar"
@@ -194,12 +194,17 @@
             android:layout_margin="@dimen/normal_margin"
             app:cardCornerRadius="@dimen/card_corner_radius">
             <android.support.v7.widget.RecyclerView
-                android:id="@+id/my_recycler_view"
+                android:id="@+id/recycler_view_review"
                 android:scrollbars="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-            </android.support.v7.widget.RecyclerView>
+                android:layout_height="match_parent"/>
+            <TextView
+                android:id="@+id/tv_review_not_available"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_reviews_yet"
+                android:textSize="@dimen/text_size"
+                android:visibility="invisible"/>
         </android.support.v7.widget.CardView>
     </LinearLayout>
 </ScrollView>

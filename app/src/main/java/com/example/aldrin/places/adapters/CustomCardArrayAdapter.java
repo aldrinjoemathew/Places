@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.models.nearby.Result;
 import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
+import com.example.aldrin.places.ui.activities.UserhomeActivity;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.text.DecimalFormat;
@@ -29,6 +30,7 @@ import java.util.List;
 
 public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
     private static final String TAG_ERROR = "error";
+    private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private List<Result> cardVenueList = new ArrayList<Result>();
     private LatLng mPosition;
     public CustomCardArrayAdapter(Context context, int textViewResourceId, LatLng userLocation) {
@@ -86,7 +88,7 @@ public class CustomCardArrayAdapter extends ArrayAdapter<Result> {
                 String placeId = venue.getPlace_id();
                 Intent placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
                 placesDetailsIntent.putExtra("place_id", placeId);
-                getContext().startActivity(placesDetailsIntent);
+                ((UserhomeActivity)getContext()).startActivityForResult(placesDetailsIntent, NAVIGATE_UP_FROM_CHILD);
             }
         });
         return row;

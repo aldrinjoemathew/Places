@@ -12,9 +12,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
-import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.GetImageBitmapFromUrl;
 import com.example.aldrin.places.models.placesdetails.Result;
+import com.example.aldrin.places.R;
 
 /**
  * Created by aldrin on 26/8/16.

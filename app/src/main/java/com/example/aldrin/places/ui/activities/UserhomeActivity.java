@@ -4,10 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -17,6 +19,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -25,8 +28,10 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.helpers.NearbyServiceSearch;
+import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
+import com.example.aldrin.places.interfaces.ApiInterface;
+import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.ui.fragments.FavouritePlacesFragment;
 import com.example.aldrin.places.ui.fragments.NearbyPlacesFragment;
 import com.example.aldrin.places.ui.fragments.ProfileFragment;
@@ -36,8 +41,21 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.gson.Gson;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.HashMap;
+
+import butterknife.BindString;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UserhomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -47,24 +65,33 @@ public class UserhomeActivity extends AppCompatActivity
         ProfileFragment.OnProfilePicChangedListener{
 
     private static final int GET_FROM_GALLERY = 1;
-    private static final String TAG_ERROR = "error";
+    private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
     private static final String TAG_INFO = "info";
+    private static final String TAG_ERROR = "error";
     private Context mContext;
-    private TextView tvUser;
-    private TextView tvEmail;
-    private de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
+
+    @BindString(R.string.google_places_web_key)
+    String mGooglePlacesWebKey;
+    @BindString(R.string.google_api_base_url)
+    String mGoogleApiBaseUrl;
+    @BindView(R.id.nav_hdr_name)
+    TextView tvUser;
+    @BindView(R.id.nav_hdr_email)
+    TextView tvEmail;
+    @BindView(R.id.nav_hdr_profile_image)
+    de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
+
     private UserManager mUserManager;
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
     private Location mLastLocation;
-    private HashMap<String, String> mApiUrlData = new HashMap<String, String>();
-    private NearbyServiceSearch mNearbyServiceSearch;
     private String mUserEmail;
     private LocationRequest mLocationRequest;
     private MenuItem mPreviousMenuItem;
     private Boolean mNavigateUpFromChild = false;
+    private Boolean mIsRestaurant = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,12 +100,12 @@ public class UserhomeActivity extends AppCompatActivity
         mContext = this;
         setViewItems();
         getLastLocation();
-        imageViewProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                changeProfilePic();
-            }
-        });
+        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean locationEnabled = service
+                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (!locationEnabled) {
+            buildAlertMessageNoGps();
+        }
         mLocationRequest = new LocationRequest();
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         mLocationRequest.setInterval(10000);
@@ -101,6 +128,11 @@ public class UserhomeActivity extends AppCompatActivity
             displayProfilePic();
             changeImageInProfileFragment();
         }
+        if(requestCode == NAVIGATE_UP_FROM_CHILD && resultCode == RESULT_OK){
+            mNavigateUpFromChild = true;
+        }
+        getSupportFragmentManager().findFragmentById(R.id.content_frame)
+                .onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -164,7 +196,7 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         if (mNavigateUpFromChild){
-            //Do nothing
+            mNavigateUpFromChild = false;
         } else {
             startLocationUpdates();
             if (mCurrentLocation != null) {
@@ -192,7 +224,7 @@ public class UserhomeActivity extends AppCompatActivity
             getLastLocation();
         } else if (mLastLocation.distanceTo(mCurrentLocation) > 50) {
             getNearbyRestaurants();
-        } else if (mUserManager.getNearbyResponse() == null) {
+        } else if (mUserManager.getNearbyResponse(mIsRestaurant) == null) {
             getNearbyRestaurants();
         }
     }
@@ -214,6 +246,7 @@ public class UserhomeActivity extends AppCompatActivity
             case MY_PERMISSIONS_READ_STORAGE: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    changeProfilePic();
                 } else {
 
                 }
@@ -245,13 +278,15 @@ public class UserhomeActivity extends AppCompatActivity
     /**
      * Method to change the user's profile picture.
      */
+    @OnClick(R.id.nav_hdr_profile_image)
     void changeProfilePic() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_READ_STORAGE);
+        } else {
+            startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
         }
-        startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
     }
 
     /**
@@ -269,10 +304,7 @@ public class UserhomeActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_layout);
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         View headerView = navigationView.inflateHeaderView(R.layout.nav_header);
-        tvUser = (TextView) headerView.findViewById(R.id.nav_hdr_name);
-        tvEmail = (TextView) headerView.findViewById(R.id.nav_hdr_email);
-        imageViewProfile = (de.hdodenhof.circleimageview.CircleImageView)
-                headerView.findViewById(R.id.nav_hdr_profile_image);
+        ButterKnife.bind(this, headerView);
         mUserManager = new UserManager(getApplicationContext());
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -333,14 +365,35 @@ public class UserhomeActivity extends AppCompatActivity
         String lat = String.valueOf(mCurrentLocation.getLatitude());
         String lng = String.valueOf(mCurrentLocation.getLongitude());
         mUserManager.updateLocation(lat, lng);
-        mApiUrlData.put("service", "nearbysearch");
-        mApiUrlData.put("lat", lat);
-        mApiUrlData.put("lng", lng);
-        mApiUrlData.put("type", "restaurant");
-        mApiUrlData.put("radius", mUserManager.getSearchRadius(mUserEmail));
-        mNearbyServiceSearch = new NearbyServiceSearch(this, mApiUrlData);
-        mNearbyServiceSearch.execute();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(mGoogleApiBaseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        String serviceType = "restaurant";
+        String location = lat + "," + lng;
+        String searchValue = null;
+        String radius = mUserManager.getSearchRadius(mUserEmail);
+        ApiInterface service = retrofit.create(ApiInterface.class);
+        Call<GetFromJson> call =
+                service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
+                        location, radius);
+        call.enqueue(startBackgroundThread);
     }
+
+    Callback<GetFromJson> startBackgroundThread = new Callback<GetFromJson>() {
+        @Override
+        public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
+            Gson gson = new Gson();
+            String apiResult = gson.toJson(response.body());
+            mUserManager.updateNearbyResponse(true, apiResult);
+            EventBus.getDefault().post(new ApiResponseUpdatedEvent(null));
+        }
+
+        @Override
+        public void onFailure(Call<GetFromJson> call, Throwable t) {
+            Log.e(TAG_ERROR, t.toString());
+        }
+    };
 
     /**
      * Method to display user's profile image.
@@ -375,5 +428,29 @@ public class UserhomeActivity extends AppCompatActivity
         } catch (NullPointerException e) {
             Log.i(TAG_INFO, "ProfileFragment is not loaded");
         }
+    }
+
+    /**
+     * To show an alert message to enable GPS.
+     */
+    private void buildAlertMessageNoGps() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                        finish();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
     }
 }

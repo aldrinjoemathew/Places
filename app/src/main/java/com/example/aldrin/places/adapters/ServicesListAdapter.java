@@ -42,6 +42,10 @@ public class ServicesListAdapter extends RecyclerView.Adapter<ServicesListAdapte
         return mServices.size();
     }
 
+    public List<String> getmServices() {
+        return mServices;
+    }
+
     public class ServicesViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.tv_services)

@@ -16,7 +16,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.helpers.NearbyServiceSearch;
+import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.Geometry;
 import com.example.aldrin.places.models.nearby.GetFromJson;
@@ -52,6 +52,7 @@ public class MapFragment extends Fragment {
     private SupportMapFragment mapFragment;
     private UserManager mUserManager;
     private Bitmap smallMarker;
+    private Boolean mIsRestaurant = true;
 
     public MapFragment() {
         super();
@@ -71,7 +72,7 @@ public class MapFragment extends Fragment {
                 getChildFragmentManager().findFragmentById(R.id.map);
         mUserManager = new UserManager(getContext());
         createMarkerBitmap();
-        if (mUserManager.getNearbyResponse() != null) {
+        if (mUserManager.getNearbyResponse(mIsRestaurant) != null) {
             updateMap();
         } else {
             setUpMap();
@@ -87,12 +88,17 @@ public class MapFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        mGoogleMap.clear();
         EventBus.getDefault().unregister(this);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mGoogleMap.clear();
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onLocationUpdateEvent(NearbyServiceSearch.LocationUpdateEvent event) {
+    public void onLocationUpdateEvent(ApiResponseUpdatedEvent event) {
             updateMap();
     }
 
@@ -152,7 +158,7 @@ public class MapFragment extends Fragment {
      */
     private void addLocationMarkers() {
         mGoogleMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
-        String apiResponse = mUserManager.getNearbyResponse();
+        String apiResponse = mUserManager.getNearbyResponse(mIsRestaurant);
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
         List<Result> results = mJsonResponse.getResults();
@@ -176,7 +182,7 @@ public class MapFragment extends Fragment {
      * Get stored location data from device cache storage.
      */
     private void getLocationData() {
-        String apiResponse = mUserManager.getNearbyResponse();
+        String apiResponse = mUserManager.getNearbyResponse(mIsRestaurant);
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
         String loc[] = mUserManager.getLocation();

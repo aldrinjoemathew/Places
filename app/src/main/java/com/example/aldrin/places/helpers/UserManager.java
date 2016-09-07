@@ -7,16 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.util.Log;
 
 import com.example.aldrin.places.models.UserInformation;
-import com.example.aldrin.places.models.placesdetails.Result;
 import com.example.aldrin.places.ui.activities.ChangePasswordActivity;
 import com.example.aldrin.places.ui.activities.LoginActivity;
 import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,7 +38,8 @@ public class UserManager {
     public static final String KEY_FIRST_NAME = "firstname";
     public static final String KEY_LAST_NAME = "lastname";
     public static final String KEY_PHONE_NUMBER = "phonenumber";
-    public static final String KEY_API_RESPONSE = "apiResponse";
+    public static final String KEY_RESTAURANT_RESPONSE = "restauantResponse";
+    public static final String KEY_SERVICES_RESPONSE = "servicesResponse";
     public static final String KEY_CURRENT_LAT = "lat";
     public static final String KEY_CURRENT_LNG = "lng";
 
@@ -135,8 +133,12 @@ public class UserManager {
      * Update the nearby search API result once location changes.
      * @param apiString
      */
-    public void updateNearbyResponse(String apiString) {
-        mPrefEditor.putString(KEY_API_RESPONSE, apiString);
+    public void updateNearbyResponse(Boolean isRestaurant, String apiString) {
+        if (isRestaurant) {
+            mPrefEditor.putString(KEY_RESTAURANT_RESPONSE, apiString);
+        } else {
+            mPrefEditor.putString(KEY_SERVICES_RESPONSE, apiString);
+        }
         mPrefEditor.commit();
     }
 
@@ -144,8 +146,17 @@ public class UserManager {
      * Retrieve the stored nearby search API result.
      * @return
      */
-    public String getNearbyResponse() {
-        return mPreferences.getString(KEY_API_RESPONSE, null);
+    public String getNearbyResponse(Boolean isRestaurant) {
+        if (isRestaurant) {
+            return mPreferences.getString(KEY_RESTAURANT_RESPONSE, null);
+        } else {
+            return mPreferences.getString(KEY_SERVICES_RESPONSE, null);
+        }
+    }
+
+    public void clearNearbyResponse() {
+        mPrefEditor.putString(KEY_SERVICES_RESPONSE, null);
+        mPrefEditor.commit();
     }
 
     /**

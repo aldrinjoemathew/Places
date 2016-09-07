@@ -1,7 +1,23 @@
-<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/recycler_favorite"
+    android:id="@+id/fragment_favorite_places"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:scrollbars="vertical"
-    tools:context=".ui.fragments.FavouritePlacesFragment" />
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.fragments.FavouritePlacesFragment">
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_favorite"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical" />
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_delete_favs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_red_light"
+        app:rippleColor="@android:color/holo_red_dark"
+        android:src="@drawable/ic_delete_white_24dp"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="@dimen/normal_margin"
+        android:visibility="visible"/>
+</FrameLayout>

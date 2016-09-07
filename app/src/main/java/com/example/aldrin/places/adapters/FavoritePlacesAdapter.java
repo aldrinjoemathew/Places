@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckedTextView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
@@ -33,17 +34,13 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
 
     private List<Result> venues;
     private UserManager mUserManager;
-    private Context mContext;
-    private FavouritePlacesFragment favouritePlacesFragment;
     /**
      * Constructor to initialize venues list.
      * @param context
      * @param venues
      */
-    public FavoritePlacesAdapter(Context context, List<Result> venues, FavouritePlacesFragment fav) {
+    public FavoritePlacesAdapter(Context context, List<Result> venues) {
         this.venues = venues;
-        mContext = context;
-        favouritePlacesFragment = fav;
         mUserManager = new UserManager(context);
     }
 
@@ -70,8 +67,9 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     /**
      *  Custom holder class for inflating the view.
      */
-    public class FavoriteViewHolder extends RecyclerView.ViewHolder
-        implements View.OnClickListener{
+    public class FavoriteViewHolder extends RecyclerView.ViewHolder{
+
+        View mItemView;
 
         @BindView(R.id.iv_venue_icon)
         ImageView ivVenueIcon;
@@ -88,16 +86,10 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
 
         public FavoriteViewHolder(View itemView) {
             super(itemView);
+            mItemView = itemView;
             ButterKnife.bind(this, itemView);
-            itemView.setOnClickListener(this);
-        }
-
-        @Override
-        public void onClick(View view) {
-            String placeId = venues.get(getLayoutPosition()).getPlace_id();
-            Intent placesDetailsIntent = new Intent(mContext, PlacesDetailsActivity.class);
-            placesDetailsIntent.putExtra("place_id", placeId);
-            favouritePlacesFragment.startActivityForResult(placesDetailsIntent, 1);
+            itemView.setClickable(true);
+            itemView.setLongClickable(true);
         }
     }
 

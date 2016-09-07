@@ -3,6 +3,7 @@ package com.example.aldrin.places.ui.activities;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -17,6 +18,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewStub;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -27,9 +30,9 @@ import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.ReviewAdapter;
 import com.example.aldrin.places.helpers.CacheStorage;
 import com.example.aldrin.places.helpers.GetImageBitmapFromUrl;
-import com.example.aldrin.places.helpers.GetPlacesDetails;
 import com.example.aldrin.places.helpers.StorageOnSdCard;
 import com.example.aldrin.places.helpers.UserManager;
+import com.example.aldrin.places.interfaces.ApiInterface;
 import com.example.aldrin.places.models.placesdetails.GetFromJson;
 import com.example.aldrin.places.models.placesdetails.Result;
 import com.google.gson.Gson;
@@ -39,14 +42,16 @@ import java.text.DecimalFormat;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class PlacesDetailsActivity extends AppCompatActivity
-        implements GetPlacesDetails.AsyncResponse,
-        GetImageBitmapFromUrl.ImageResponse{
+        implements GetImageBitmapFromUrl.ImageResponse{
 
     private static final String TAG_ERROR = "error";
-    private final String mFolderPath = "Favorites";
-    private GetPlacesDetails getPlacesDetails;
     private GetImageBitmapFromUrl getImageBitmap;
     private StorageOnSdCard mSdCard;
     private Result mPlacesDetails;
@@ -57,11 +62,9 @@ public class PlacesDetailsActivity extends AppCompatActivity
     private Toolbar mToolbar;
     private Drawable mDivider;
     private Boolean mIsFavorite = false;
-
-    @BindView(R.id.my_recycler_view)
-    RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+    private Call<GetFromJson> call;
 
     @BindView(R.id.layout_phone_number)
     LinearLayout mLayoutPhoneNumber;
@@ -90,6 +93,10 @@ public class PlacesDetailsActivity extends AppCompatActivity
     RatingBar ratingVenue;
     @BindView(R.id.venue_image)
     ImageView imgRestaurant;
+    @BindView(R.id.recycler_view_review)
+    RecyclerView mRecyclerView;
+    @BindView(R.id.tv_review_not_available)
+    TextView tvNoReviews;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,30 +112,118 @@ public class PlacesDetailsActivity extends AppCompatActivity
         mPlacesDetailsProgress = (ProgressBar) findViewById(R.id.progressbar_places_details);
 
         String placeId = getIntent().getStringExtra("place_id");
+        String mGooglePlacesWebKey = getString(R.string.google_places_web_key);
+        String mGoogleApiBaseUrl = getString(R.string.google_api_base_url);
         cacheBitmap = new CacheStorage();
-        getPlacesDetails = new GetPlacesDetails(this, placeId);
-        getPlacesDetails.delegate = this;
-        getPlacesDetails.execute();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(mGoogleApiBaseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        ApiInterface service = retrofit.create(ApiInterface.class);
+        call = service.getPlaceDetails(mGooglePlacesWebKey, placeId);
+        call.enqueue(startBackgroundThread);
         mPlacesDetailsProgress.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onBackPressed() {
-        if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
-                mPlacesDetails.getPlace_id())) {
-            Intent intent = new Intent();
-            intent.putExtra("valueChanged",true);
-            if (getParent() == null) {
-                setResult(1, intent);
+        call.cancel();
+        Intent intent = new Intent();
+        try {
+            if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
+                    mPlacesDetails.getPlace_id())) {
+                intent.putExtra("valueChanged",true);
             }
-            else {
-                getParent().setResult(1, intent);
-            }
+        } catch (NullPointerException e) {
+        }
+        if (getParent() == null) {
+            setResult(RESULT_OK, intent);
+        } else {
+            getParent().setResult(RESULT_OK, intent);
         }
         super.onBackPressed();
     }
 
+    Callback<GetFromJson> startBackgroundThread = new Callback<GetFromJson>() {
+        @Override
+        public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
+            Gson gson = new Gson();
+            String apiResult = gson.toJson(response.body());
+            displayProcessDetails(apiResult);
+        }
+        @Override
+        public void onFailure(Call<GetFromJson> call, Throwable t) {
+            Log.e(TAG_ERROR, t.toString());
+        }
+    };
+
     @Override
+    public void loadImage(String imageKey, Bitmap imageBitmap) {
+        imgRestaurant.setImageBitmap(imageBitmap);
+        cacheBitmap.addBitmapToMemoryCache(imageKey, imageBitmap);
+    }
+
+    @OnClick(R.id.layout_diretion)
+    public void showDirections() {
+        com.example.aldrin.places.models.placesdetails.Location location =
+                mPlacesDetails.getGeometry().getLocation();
+        String loc[] = mUserManager.getLocation();
+        final Intent intent = new
+                Intent(Intent.ACTION_VIEW,Uri.parse("http://maps.google.com/maps?" +
+                "saddr="+ loc[0] + "," + loc[1] + "&daddr=" + location.getLat() + "," +
+                location.getLng()));
+        intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.layout_web_address)
+    public void goToWebsite() {
+        Intent viewIntent = new Intent("android.intent.action.VIEW",
+                Uri.parse(mPlacesDetails.getWebsite()));
+        startActivity(viewIntent);
+    }
+
+    @OnClick(R.id.layout_phone_number)
+    public void makecall(){
+        String phoneNumber = mPlacesDetails.getFormatted_phone_number();
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.setData(Uri.parse("tel:" + phoneNumber));
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.iv_add_favorite)
+    public void addOrRemoveFavorite() {
+        String placeId = mPlacesDetails.getPlace_id();
+        mSdCard = new StorageOnSdCard();
+        Animation favAnimation = AnimationUtils.loadAnimation(this, R.anim.favorite);
+        ivAddFavorite.startAnimation(favAnimation);
+        if (mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
+            mUserManager.removeFavorite(mUserManager.getUserEmail(), placeId);
+            ivAddFavorite.clearColorFilter();
+            mSdCard.removeFromSdCard("Favorites/" + mUserManager.getUserEmail(),placeId);
+        } else {
+            mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
+            ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            Gson gson = new Gson();
+            String placeDetails = gson.toJson(mPlacesDetails);
+            mSdCard.addToSdCard("Favorites/" + mUserManager.getUserEmail(), placeId, placeDetails);
+        }
+    }
+
+    /**
+     * On navigation up arrow clicked.
+     */
+    View.OnClickListener navigateUp = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            onBackPressed();
+        }
+    };
+
+    /**
+     * Display place details.
+     * @param output
+     */
     public void displayProcessDetails(String output) {
         mPlacesDetailsProgress.setVisibility(View.GONE);
         vsPlacesDetailsContent = (ViewStub) findViewById(R.id.content_places_details);
@@ -137,9 +232,15 @@ public class PlacesDetailsActivity extends AppCompatActivity
         Gson gson = new Gson();
         GetFromJson response = gson.fromJson(output, GetFromJson.class);
         mPlacesDetails = response.getResult();
-        String photoRef = mPlacesDetails.getPhotos().get(0).getPhoto_reference();
-        String imageUrl = String.format(getString(R.string.image_url), photoRef);
-        loadBitmap(imageUrl);
+        try{
+            String photoRef = mPlacesDetails.getPhotos().get(0).getPhoto_reference();
+            String imageUrl = String.format(getString(R.string.image_url), photoRef);
+            loadBitmap(imageUrl);
+        } catch (NullPointerException e) {
+            mImageProgressBar.setVisibility(View.GONE);
+            imgRestaurant.setImageBitmap(BitmapFactory.decodeResource(getResources(),
+                    R.drawable.image_no_image_available));
+        }
         String restTitle = mPlacesDetails.getName();
         String restAddress = mPlacesDetails.getFormatted_address();
         String restPhoneNumber = mPlacesDetails.getInternational_phone_number();
@@ -182,66 +283,6 @@ public class PlacesDetailsActivity extends AppCompatActivity
         displayReviews();
     }
 
-    @Override
-    public void loadImage(String imageKey, Bitmap imageBitmap) {
-        imgRestaurant.setImageBitmap(imageBitmap);
-        cacheBitmap.addBitmapToMemoryCache(imageKey, imageBitmap);
-    }
-
-    @OnClick(R.id.layout_diretion)
-    public void showDirections() {
-        com.example.aldrin.places.models.placesdetails.Location location =
-                mPlacesDetails.getGeometry().getLocation();
-        String loc[] = mUserManager.getLocation();
-        final Intent intent = new
-                Intent(Intent.ACTION_VIEW,Uri.parse("http://maps.google.com/maps?" +
-                "saddr="+ loc[0] + "," + loc[1] + "&daddr=" + location.getLat() + "," +
-                location.getLng()));
-        intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
-        startActivity(intent);
-    }
-
-    @OnClick(R.id.layout_web_address)
-    public void goToWebsite() {
-        Intent viewIntent = new Intent("android.intent.action.VIEW",
-                Uri.parse(mPlacesDetails.getWebsite()));
-        startActivity(viewIntent);
-    }
-
-    @OnClick(R.id.layout_phone_number)
-    public void makecall(){
-        String phoneNumber = mPlacesDetails.getFormatted_phone_number();
-        Intent intent = new Intent(Intent.ACTION_DIAL);
-        intent.setData(Uri.parse("tel:" + phoneNumber));
-        startActivity(intent);
-    }
-
-    @OnClick(R.id.iv_add_favorite)
-    public void addOrRemoveFavorite() {
-        String placeId = mPlacesDetails.getPlace_id();
-        mSdCard = new StorageOnSdCard();
-        if (mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
-            mUserManager.removeFavorite(mUserManager.getUserEmail(), placeId);
-            ivAddFavorite.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
-            mSdCard.removeFromSdCard(mFolderPath,placeId);
-        } else {
-            mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
-            ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
-            Gson gson = new Gson();
-            String placeDetails = gson.toJson(mPlacesDetails);
-            mSdCard.addToSdCard(mFolderPath, placeId, placeDetails);
-        }
-    }
-
-    /**
-     * On navigation up arrow clicked.
-     */
-    View.OnClickListener navigateUp = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            onBackPressed();
-        }
-    };
 
     /**
      * Displays reviews in a recycler view.
@@ -273,6 +314,8 @@ public class PlacesDetailsActivity extends AppCompatActivity
                 }
             });
             mRecyclerView.setAdapter(mAdapter);
+        } else {
+            tvNoReviews.setVisibility(View.VISIBLE);
         }
     }
 

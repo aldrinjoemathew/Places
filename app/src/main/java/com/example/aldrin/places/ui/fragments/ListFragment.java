@@ -8,10 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.CustomCardArrayAdapter;
-import com.example.aldrin.places.helpers.NearbyServiceSearch;
+import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.models.nearby.Result;
@@ -24,22 +26,38 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * A simple {@link Fragment} subclass.
  * Displays the nearby places as a list of cards.
  */
 public class ListFragment extends Fragment {
 
+    public static final String TAG = ListFragment.class.getSimpleName();
     private CustomCardArrayAdapter mCardAdapter;
-    private ListView mCardList;
     private Context mContext;
     private UserManager mUserManager;
     private GetFromJson mJsonResponse;
     private LatLng mPosition;
     private List<Result> results;
+    private static Boolean mIsRestaurant = true;
+
+    @BindView(R.id.tv_nothing_to_display)
+    TextView tvNothingToDisplay;
+    @BindView(R.id.places_list_view)
+    ListView lvCardList;
+    @BindView(R.id.progress_list_view)
+    ProgressBar progressListView;
 
     public ListFragment() {
         // Required empty public constructor
+    }
+
+    public static ListFragment newInstance(Boolean isRestaurant) {
+        mIsRestaurant = isRestaurant;
+        return new ListFragment();
     }
 
     @Override
@@ -53,8 +71,8 @@ public class ListFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mCardList = (ListView) view.findViewById(R.id.places_list_view);
-        if (mUserManager.getNearbyResponse() != null) {
+        ButterKnife.bind(this, view);
+        if (mUserManager.getNearbyResponse(mIsRestaurant) != null) {
             showCardList();
         }
     }
@@ -69,10 +87,11 @@ public class ListFragment extends Fragment {
     public void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
+        mUserManager.clearNearbyResponse();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onLocationUpdateEvent(NearbyServiceSearch.LocationUpdateEvent event) {
+    public void onLocationUpdateEvent(ApiResponseUpdatedEvent event) {
         showCardList();
     }
 
@@ -87,15 +106,19 @@ public class ListFragment extends Fragment {
                 Result venue = results.get(i);
                 mCardAdapter.add(venue);
             }
+            progressListView.setVisibility(View.INVISIBLE);
         }
-        mCardList.setAdapter(mCardAdapter);
+        if (results.size() == 0){
+            //tvNothingToDisplay.setVisibility(View.VISIBLE);
+        }
+        lvCardList.setAdapter(mCardAdapter);
     }
 
     /**
      * Get stored location data from shared preference.
      */
     private List<Result> getLocationData() {
-        String apiResponse = mUserManager.getNearbyResponse();
+        String apiResponse = mUserManager.getNearbyResponse(mIsRestaurant);
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
         String loc[] = mUserManager.getLocation();
