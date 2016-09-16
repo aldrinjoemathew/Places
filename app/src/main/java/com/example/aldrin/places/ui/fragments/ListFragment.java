@@ -1,23 +1,33 @@
 package com.example.aldrin.places.ui.fragments;
 
-import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.adapters.CustomCardArrayAdapter;
+import com.example.aldrin.places.adapters.CardListAdapter;
 import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.NavigationItemClickedEvent;
+import com.example.aldrin.places.helpers.RecyclerClickListener;
+import com.example.aldrin.places.helpers.InternalStorage;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.models.nearby.Result;
-import com.google.android.gms.maps.model.LatLng;
+import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
 import com.google.gson.Gson;
 
 import org.greenrobot.eventbus.EventBus;
@@ -36,18 +46,23 @@ import butterknife.ButterKnife;
 public class ListFragment extends Fragment {
 
     public static final String TAG = ListFragment.class.getSimpleName();
-    private CustomCardArrayAdapter mCardAdapter;
-    private Context mContext;
+    private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private UserManager mUserManager;
     private GetFromJson mJsonResponse;
-    private LatLng mPosition;
     private List<Result> results;
-    private static Boolean mIsRestaurant = true;
+    private Boolean mIsRestaurant = true;
+    private Boolean mIsGrid = false;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private TextView tvFragmentTitle;
+    private ImageView ivAddFavorite;
+    private InternalStorage mSdCard;
+    private Gson gson = new Gson();
 
     @BindView(R.id.tv_nothing_to_display)
     TextView tvNothingToDisplay;
-    @BindView(R.id.places_list_view)
-    ListView lvCardList;
+    @BindView(R.id.recycler_card_list)
+    RecyclerView mRecyclerView;
     @BindView(R.id.progress_list_view)
     ProgressBar progressListView;
 
@@ -55,15 +70,9 @@ public class ListFragment extends Fragment {
         // Required empty public constructor
     }
 
-    public static ListFragment newInstance(Boolean isRestaurant) {
-        mIsRestaurant = isRestaurant;
-        return new ListFragment();
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        mContext = getContext();
         mUserManager = new UserManager(getContext());
         return inflater.inflate(R.layout.fragment_list, container, false);
     }
@@ -72,15 +81,26 @@ public class ListFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
+        tvFragmentTitle = (TextView) getActivity().findViewById(R.id.tv_fragment_title);
+        mIsRestaurant = this.getArguments().getBoolean("isRestaurant");
+        if (!mIsRestaurant) {
+            String serviceName = this.getArguments().getString("service");
+            tvFragmentTitle.setText(serviceName);
+        }
+        mIsGrid = this.getArguments().getBoolean("isGrid");
         if (mUserManager.getNearbyResponse(mIsRestaurant) != null) {
             showCardList();
         }
+        mRecyclerView.addOnItemTouchListener(listItemListener);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         EventBus.getDefault().register(this);
+        if (!mIsRestaurant) {
+            tvFragmentTitle.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -88,6 +108,12 @@ public class ListFragment extends Fragment {
         super.onStop();
         EventBus.getDefault().unregister(this);
         mUserManager.clearNearbyResponse();
+        tvFragmentTitle.setVisibility(View.GONE);
+    }
+
+    @Subscribe
+    public void onNavigationItemEvent(NavigationItemClickedEvent event) {
+        getFragmentManager().popBackStack();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -95,23 +121,65 @@ public class ListFragment extends Fragment {
         showCardList();
     }
 
+    RecyclerView.OnItemTouchListener listItemListener =
+            new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
+        @Override
+        public void onItemClick(View view, int position) {
+            String placeId = results.get(position).getPlace_id();
+            Intent placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
+            placesDetailsIntent.putExtra("place_id", placeId);
+            getActivity().startActivityForResult(placesDetailsIntent, NAVIGATE_UP_FROM_CHILD);
+        }
+
+        @Override
+        public void onItemLongClick(View view, int position) {
+
+        }
+
+        @Override
+        public void onDoubleTap(View childView, int childAdapterPosition) {
+            ivAddFavorite = (ImageView) childView.findViewById(R.id.iv_add_favorite);
+            ivAddFavorite.setVisibility(View.VISIBLE);
+            Animation favAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.favorite);
+            ivAddFavorite.startAnimation(favAnimation);
+            ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            ivAddFavorite.setVisibility(View.GONE);
+            String placeId = results.get(childAdapterPosition).getPlace_id();
+            mSdCard = new InternalStorage();
+            if (!mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
+                mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
+                ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+                String placeDetails = gson.toJson(results.get(childAdapterPosition));
+                mSdCard.addToSdCard(getContext(), "Favorites/" + mUserManager.getUserEmail(), placeId, placeDetails);
+            }
+        }
+
+        @Override
+        public void onFling(View childView1, View childView2, int pos1, int pos2) {
+
+        }
+    });
+
     /**
      * Displays venue details as a list of cards.
      */
     private void showCardList() {
         results = getLocationData();
-        mCardAdapter = new CustomCardArrayAdapter(mContext, R.layout.layout_card_location_details, mPosition);
         if (results != null) {
-            for (int i = 0; i < results.size(); i++) {
-                Result venue = results.get(i);
-                mCardAdapter.add(venue);
-            }
             progressListView.setVisibility(View.INVISIBLE);
+            mRecyclerView.setHasFixedSize(true);
+            if (mIsGrid) {
+                mLayoutManager = new GridLayoutManager(getContext(), 2);
+            } else {
+                mLayoutManager = new LinearLayoutManager(getContext());
+            }
+            mAdapter = new CardListAdapter(getContext(), results, mIsGrid);
+            mRecyclerView.setLayoutManager(mLayoutManager);
+            mRecyclerView.setAdapter(mAdapter);
         }
         if (results.size() == 0){
             //tvNothingToDisplay.setVisibility(View.VISIBLE);
         }
-        lvCardList.setAdapter(mCardAdapter);
     }
 
     /**
@@ -121,8 +189,6 @@ public class ListFragment extends Fragment {
         String apiResponse = mUserManager.getNearbyResponse(mIsRestaurant);
         Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
-        String loc[] = mUserManager.getLocation();
-        mPosition = new LatLng(Double.parseDouble(loc[0]), Double.parseDouble(loc[1]));
         return mJsonResponse.getResults();
     }
 }

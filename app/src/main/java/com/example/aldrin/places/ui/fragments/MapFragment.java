@@ -31,6 +31,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -94,7 +95,9 @@ public class MapFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mGoogleMap.clear();
+        if(mGoogleMap != null) {
+            mGoogleMap.clear();
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -221,7 +224,7 @@ public class MapFragment extends Fragment {
                 }
                 Gson gson = new Gson();
                 venue = gson.fromJson(venueDetails, Result.class);
-                ImageView image = (ImageView) view.findViewById(R.id.iv_venue_icon);
+                ImageView ivVenueIcon = (ImageView) view.findViewById(R.id.iv_venue_icon);
                 TextView tvTitle = (TextView) view.findViewById(R.id.tv_rest_name);
                 TextView tvDistance = (TextView) view.findViewById(R.id.tv_distance);
                 TextView tvAddress = (TextView) view.findViewById(R.id.tv_address);
@@ -233,6 +236,11 @@ public class MapFragment extends Fragment {
                 tvAddress.setText(address);
                 tvDistance.setText(distance + " km");
                 ratingVenue.setRating(venue.getRating());
+                Picasso.with(mContext)
+                        .load(venue.getIcon().toString())
+                        .placeholder(R.drawable.ic_image_placeholder)
+                        .error(R.drawable.image_no_image_available)
+                        .into(ivVenueIcon);
             } catch (NullPointerException e) {
                 Log.e(TAG_ERROR, e.toString());
             }

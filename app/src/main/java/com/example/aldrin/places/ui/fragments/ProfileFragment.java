@@ -24,6 +24,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
 import com.example.aldrin.places.helpers.CustomTextWatcher;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.UserInformation;
@@ -50,6 +51,7 @@ public class ProfileFragment extends Fragment {
     private UserManager mCurrentUser;
     private String mUserEmail;
     private int radiusValue;
+    private OnProfilePicChangedListener profilePicChangedListener;
 
     @BindView(R.id.button_submit)
     Button btnSubmitDetails;
@@ -102,6 +104,7 @@ public class ProfileFragment extends Fragment {
         addTextChangedListeners();
         displayUserInformation();
         seekbarRadius.setOnSeekBarChangeListener(radiusChanged);
+        profilePicChangedListener = (OnProfilePicChangedListener) getActivity();
     }
 
     @Override
@@ -109,8 +112,7 @@ public class ProfileFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri selectedImage = data.getData();
-            OnProfilePicChangedListener profilePicChangedListener = (OnProfilePicChangedListener) getActivity();
-            mCurrentUser.changeProfilePic(mUserEmail, selectedImage);
+            mCurrentUser.changeProfilePic(selectedImage);
             displayProfilePic();
             profilePicChangedListener.onProfilePicChanged();
         }
@@ -137,7 +139,7 @@ public class ProfileFragment extends Fragment {
     private void displayUserInformation() {
         mCurrentUser = new UserManager(mContext);
         mUserEmail = mCurrentUser.getUserEmail();
-        HashMap<String, String> userDetails = mCurrentUser.getUserDetails(mUserEmail);
+        HashMap<String, String> userDetails = mCurrentUser.getUserDetails();
         String firstName = userDetails.get(KEY_FIRST_NAME);
         String lastName = userDetails.get(KEY_LAST_NAME);
         String phoneNumber = userDetails.get(KEY_PHONE_NUMBER);
@@ -146,7 +148,7 @@ public class ProfileFragment extends Fragment {
         etLastname.setText(lastName);
         etPhoneNumber.setText(phoneNumber);
         displayProfilePic();
-        String radius = mCurrentUser.getSearchRadius(mUserEmail);
+        String radius = mCurrentUser.getSearchRadius();
         int radiusValue =  Integer.parseInt(radius);
         seekbarRadius.setProgress(radiusValue);
         if (Integer.parseInt(radius)<1000) {
@@ -168,8 +170,7 @@ public class ProfileFragment extends Fragment {
         newUser.setmEmail(etEmail.getText().toString());
         newUser.setmPhoneNumber(etPhoneNumber.getText().toString());
         if (radiusValue != seekbarRadius.getProgress()) {
-            mCurrentUser.updateSearchRadius(mUserEmail,
-                    String.valueOf(seekbarRadius.getProgress()));
+            mCurrentUser.updateSearchRadius(String.valueOf(seekbarRadius.getProgress()));
             ((UserhomeActivity) getActivity()).getNearbyRestaurants();
         }
     }

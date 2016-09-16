@@ -9,6 +9,7 @@ import java.util.List;
 public class Result {
     private String name;
     private String formatted_address;
+    private String vicinity;
     private String formatted_phone_number;
     private Geometry geometry;
     private String international_phone_number;
@@ -19,6 +20,15 @@ public class Result {
     private float rating;
     private List<Review> reviews;
     private String place_id;
+    private Boolean isSelected = false;
+
+    public Boolean getSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(Boolean selected) {
+        isSelected = selected;
+    }
 
     public String getPlace_id() {
         return place_id;
@@ -50,6 +60,10 @@ public class Result {
 
     public String getFormatted_address() {
         return formatted_address;
+    }
+
+    public String getVicinity() {
+        return vicinity;
     }
 
     public String getFormatted_phone_number() {

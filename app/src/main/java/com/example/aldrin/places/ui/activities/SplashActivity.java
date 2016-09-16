@@ -16,8 +16,7 @@ import com.example.aldrin.places.R;
 public class SplashActivity extends AppCompatActivity {
 
     private Handler mHandler = new Handler();
-    static final int sTimerDelay =5000;
-    Boolean mBackPressed = false;
+    static final int sTimerDelay =2000;
     UserManager mSession;
 
     final Runnable loginRunnable = new Runnable() {

@@ -15,6 +15,7 @@ import com.example.aldrin.places.R;
 import com.google.gson.Gson;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,11 +43,13 @@ public class UserManager {
     public static final String KEY_SERVICES_RESPONSE = "servicesResponse";
     public static final String KEY_CURRENT_LAT = "lat";
     public static final String KEY_CURRENT_LNG = "lng";
+    private String mUserEmail;
 
     public UserManager(Context context) {
         mContext = context;
         mPreferences = mContext.getSharedPreferences(PREFER_NAME, PRIVATE_MODE);
         mPrefEditor = mPreferences.edit();
+        mUserEmail = mPreferences.getString(KEY_LOGGED_IN_EMAIL, null);
     }
 
     /**
@@ -92,23 +95,22 @@ public class UserManager {
 
     /**
      * Return the user's current search radius.
-     * @param email
-     * @return
+     * @return radius
      */
-    public String getSearchRadius(String email) {
-        String userDetailsJson = mPreferences.getString(email,null);
+    public String getSearchRadius() {
+        String userDetailsJson = mPreferences.getString(mUserEmail,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
         return userInfo.getmSearchRadius();
     }
 
-    public void updateSearchRadius(String email, String radius) {
-        String detailsJson = mPreferences.getString(email,null);
+    public void updateSearchRadius(String radius) {
+        String detailsJson = mPreferences.getString(mUserEmail,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
         userInfo.setmSearchRadius(radius);
         String userDetails = gson.toJson(userInfo);
-        mPrefEditor.putString(email,userDetails);
+        mPrefEditor.putString(mUserEmail,userDetails);
         mPrefEditor.commit();
     }
 
@@ -198,16 +200,15 @@ public class UserManager {
 
     /**
      * Update the user's current profile picture.
-     * @param email
      * @param uriProfilePic
      */
-    public void changeProfilePic(String email, Uri uriProfilePic) {
-        String detailsJson = mPreferences.getString(email,null);
+    public void changeProfilePic(Uri uriProfilePic) {
+        String detailsJson = mPreferences.getString(mUserEmail,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
         userInfo.setmImageUri(uriProfilePic.toString());
         String userDetails = gson.toJson(userInfo);
-        mPrefEditor.putString(email,userDetails);
+        mPrefEditor.putString(mUserEmail,userDetails);
         mPrefEditor.commit();
     }
 
@@ -242,7 +243,6 @@ public class UserManager {
      * Update the passcode in shared pref.
      * Generate a notification displaying the passcode.
      * On clicking on notification go to ChangePasswordActivity.
-     * @param email
      */
     public void resetPassword(String email){
         String newPassword = generatePassword();
@@ -271,12 +271,15 @@ public class UserManager {
 
     /**
      * Change password to newPassword if oldPassword is correct.
-     * @param email
      * @param oldPassword
      * @param newPassword
      * @return true if password change is success.
      */
     public Boolean changePassword(String email, String oldPassword, String newPassword){
+        Boolean userExists = checkUserExists(email);
+        if (!userExists) {
+            return false;
+        }
         String detailsJson = mPreferences.getString(email,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
@@ -317,12 +320,11 @@ public class UserManager {
      * Use the email ID as key value to retrieve user details.
      * Extract user data using the JSON object.
      * User data is converted into a hash map object and returned back.
-     * @param email
      * @return the user details.
      */
-    public HashMap<String, String> getUserDetails(String email) {
+    public HashMap<String, String> getUserDetails() {
         HashMap<String, String> user = new HashMap<String, String>();
-        String userDetailsJson = mPreferences.getString(email,null);
+        String userDetailsJson = mPreferences.getString(mUserEmail,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
         user.put(KEY_FIRST_NAME, userInfo.getmFirstName());
@@ -334,7 +336,6 @@ public class UserManager {
 
     /**
      * Validate password on login.
-     * @param email
      * @param password
      * @return true if password is correct, false otherwise.
      */
@@ -404,32 +405,56 @@ public class UserManager {
         UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
         if (userInfo.getmFavoritePlaces() != null) {
             String[] favs = userInfo.getmFavoritePlaces().split(",");
-            for (int i=0; i<favs.length; i++) {
-                if (favs[i].equals(placeId)) {
-                    List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
+            List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
+            for (int i=0; i<arrayList.size(); i++) {
+                if (arrayList.get(i).length() == 0) {
+                    arrayList.remove(i);
+                }
+                if (arrayList.get(i).equals(placeId)) {
                     arrayList.remove(placeId);
-                    favs = arrayList.toArray(new String[0]);
-                    StringBuilder builder = new StringBuilder();
-                    for(String s : favs) {
-                        builder.append(s + ",");
-                    }
-                    userInfo.setmFavoritePlaces(builder.toString());
-                    String userDetails = gson.toJson(userInfo);
-                    mPrefEditor.putString(email,userDetails);
-                    mPrefEditor.commit();
                 }
             }
+            favs = arrayList.toArray(new String[0]);
+            StringBuilder builder = new StringBuilder();
+            for(String s : favs) {
+                builder.append(s + ",");
+            }
+            userInfo.setmFavoritePlaces(builder.toString());
+            String userDetails = gson.toJson(userInfo);
+            mPrefEditor.putString(email,userDetails);
+            mPrefEditor.commit();
+        }
+    }
+
+    public void swapFavorites(int pos1, int pos2) {
+        String detailsJson = mPreferences.getString(mUserEmail,null);
+        Gson gson = new Gson();
+        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
+        if (userInfo.getmFavoritePlaces() != null) {
+            String[] favs = userInfo.getmFavoritePlaces().split(",");
+            List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
+            Collections.swap(arrayList, pos1, pos2);
+            arrayList.add(pos2, arrayList.get(pos1));
+            arrayList.remove(pos1);
+            favs = arrayList.toArray(new String[0]);
+            StringBuilder builder = new StringBuilder();
+            for(String s : favs) {
+                builder.append(s + ",");
+            }
+            userInfo.setmFavoritePlaces(builder.toString());
+            String userDetails = gson.toJson(userInfo);
+            mPrefEditor.putString(mUserEmail,userDetails);
+            mPrefEditor.commit();
         }
     }
 
     /**
      * Returns the list of favorite places as a string.
      * Uses comma as a separator.
-     * @param email
      * @return
      */
-    public String getFavorite(String email) {
-        String detailsJson = mPreferences.getString(email,null);
+    public String getFavorite() {
+        String detailsJson = mPreferences.getString(mUserEmail,null);
         Gson gson = new Gson();
         UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
         return userInfo.getmFavoritePlaces();

@@ -2,14 +2,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <ListView
+    <!--<ListView
         android:id="@+id/places_list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clickable="true"
         android:divider="@null"
         android:dividerHeight="0dp"
-        tools:context=".ui.fragments.ListFragment"/>
+        tools:context=".ui.fragments.ListFragment"/>-->
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_card_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical" />
     <TextView
         android:id="@+id/tv_nothing_to_display"
         android:layout_width="match_parent"

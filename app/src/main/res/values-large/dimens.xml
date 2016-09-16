@@ -9,7 +9,7 @@
     <dimen name="button_elevation">5dp</dimen>
     <dimen name="layout_margin_lr_edit_text">200dp</dimen>
     <dimen name="layout_margin_top_edit_text">30dp</dimen>
-    <dimen name="toolbar_height">120dp</dimen>
+    <dimen name="toolbar_height">96dp</dimen>
     <dimen name="button_text_size">24sp</dimen>
     <dimen name="layout_margin_top_button">40dp</dimen>
     <dimen name="padding_lr_button">30dp</dimen>

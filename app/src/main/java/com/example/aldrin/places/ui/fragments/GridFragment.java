@@ -7,10 +7,8 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.adapters.CustomCardArrayAdapter;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.models.nearby.Result;
@@ -18,23 +16,17 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 
-import butterknife.BindView;
-
 /**
  * A simple {@link Fragment} subclass.
  */
 public class GridFragment extends Fragment {
 
     public static final String TAG = ListFragment.class.getSimpleName();
-    private CustomCardArrayAdapter mCardAdapter;
     private Context mContext;
     private UserManager mUserManager;
     private GetFromJson mJsonResponse;
     private LatLng mPosition;
     private List<Result> results;
-
-    @BindView(R.id.places_list_view)
-    ListView lvCardList;
 
     public GridFragment() {
         // Required empty public constructor

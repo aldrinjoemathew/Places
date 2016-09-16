@@ -1,9 +1,6 @@
 package com.example.aldrin.places.ui.fragments;
 
 
-import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.ServicesListAdapter;
@@ -49,11 +47,10 @@ public class ServicesFragment extends Fragment {
     private static final String TAG_ERROR = "error";
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private Drawable mDivider;
     private List<String> mServiceTypeTitles;
     private List<String> mServiceTypes;
     private UserManager mUserManager;
-    private String mUserEmail;
+    private TextView tvFragmentTitle;
 
     @BindView(R.id.recycler_view_services)
     RecyclerView mRecyclerView;
@@ -74,7 +71,6 @@ public class ServicesFragment extends Fragment {
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -84,18 +80,34 @@ public class ServicesFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         ButterKnife.bind(this, view);
-        addToList();
+        initializeRecyclerView();
         mUserManager = new UserManager(getContext());
-        mUserEmail = mUserManager.getUserEmail();
+        tvFragmentTitle = (TextView) getActivity().findViewById(R.id.tv_fragment_title);
+        tvFragmentTitle.setText("Services");
         String[] serviceTypes = getString(R.string.services).split(",");
         mServiceTypes = new LinkedList<String>(Arrays.asList(serviceTypes));
         mRecyclerView.addOnItemTouchListener(startBackgroundThread);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        tvFragmentTitle.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        tvFragmentTitle.setVisibility(View.GONE);
+    }
+
+    /**
+     * Implementation of Recycler view touch listener.
+     * Displays nearby services when clicking on a service.
+     */
     RecyclerView.OnItemTouchListener startBackgroundThread =
-            new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemClickListener() {
+            new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
         @Override
         public void onItemClick(View view, int position) {
             String searchValue = mSearchService.getText().toString();
@@ -107,7 +119,7 @@ public class ServicesFragment extends Fragment {
                         .build();
                 String loc[] = mUserManager.getLocation();
                 String location = loc[0] + "," + loc[1];
-                String radius = mUserManager.getSearchRadius(mUserEmail);
+                String radius = mUserManager.getSearchRadius();
                 ApiInterface service = retrofit.create(ApiInterface.class);
                 Call<GetFromJson> call =
                         service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
@@ -118,8 +130,14 @@ public class ServicesFragment extends Fragment {
                         getActivity().getSupportFragmentManager()
                                 .beginTransaction();
                 fragmentTransaction.addToBackStack(null);
+                String serviceName = mServiceTypeTitles.get(position);
+                Bundle bundle = new Bundle();
+                bundle.putBoolean("isRestaurant", isRestaurant);
+                bundle.putString("service", serviceName);
+                ListFragment tab2 = new ListFragment();
+                tab2.setArguments(bundle);
                 fragmentTransaction.replace(R.id.content_frame,
-                        ListFragment.newInstance(isRestaurant), ListFragment.TAG).commit();
+                        tab2, ListFragment.TAG).commit();
             }
         }
 
@@ -127,8 +145,22 @@ public class ServicesFragment extends Fragment {
         public void onItemLongClick(View view, int position) {
             Log.i("info", "long clicked" + position);
         }
+
+        @Override
+        public void onDoubleTap(View childView, int childAdapterPosition) {
+
+        }
+
+        @Override
+        public void onFling(View childView1, View childView2, int pos1, int pos2) {
+
+        }
     });
 
+    /**
+     * Restrofit callback.
+     * Displays the services in a new fragment on success.
+     */
     Callback<GetFromJson> displayServicesInNewFragment = new Callback<GetFromJson>() {
         @Override
         public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
@@ -144,9 +176,12 @@ public class ServicesFragment extends Fragment {
         }
     };
 
-    private void addToList() {
+    /**
+     * Initailzing the recycler view.
+     */
+    private void initializeRecyclerView() {
         String[] serviceTitles = getString(R.string.services_display_names).split(",");
-        mServiceTypeTitles = new LinkedList<String>(Arrays.asList(serviceTitles));
+        mServiceTypeTitles = new LinkedList<>(Arrays.asList(serviceTitles));
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getContext());
         mAdapter = new ServicesListAdapter(mServiceTypeTitles);

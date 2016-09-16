@@ -2,7 +2,6 @@ package com.example.aldrin.places.ui.activities;
 
 import android.content.Intent;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,15 +27,16 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.ReviewAdapter;
-import com.example.aldrin.places.helpers.CacheStorage;
 import com.example.aldrin.places.helpers.GetImageBitmapFromUrl;
-import com.example.aldrin.places.helpers.StorageOnSdCard;
+import com.example.aldrin.places.helpers.InternalStorage;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.interfaces.ApiInterface;
 import com.example.aldrin.places.models.placesdetails.GetFromJson;
 import com.example.aldrin.places.models.placesdetails.Result;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
+import java.lang.ref.WeakReference;
 import java.text.DecimalFormat;
 
 import butterknife.BindView;
@@ -49,13 +49,13 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class PlacesDetailsActivity extends AppCompatActivity
-        implements GetImageBitmapFromUrl.ImageResponse{
+        /*implements GetImageBitmapFromUrl.ImageResponse*/{
 
-    private static final String TAG_ERROR = "error";
+    private final String TAG_ERROR = "error";
     private GetImageBitmapFromUrl getImageBitmap;
-    private StorageOnSdCard mSdCard;
+    private InternalStorage mFileStorage;
     private Result mPlacesDetails;
-    private CacheStorage cacheBitmap;
+    /*private CacheStorage cacheBitmap;*/
     private UserManager mUserManager;
     private ViewStub vsPlacesDetailsContent;
     private View mView;
@@ -65,6 +65,9 @@ public class PlacesDetailsActivity extends AppCompatActivity
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private Call<GetFromJson> call;
+    private Gson gson = new Gson();
+    private WeakReference<ImageView> imageViewWeakReference;
+    private WeakReference<RecyclerView.Adapter> recyclerViewWeakReference;
 
     @BindView(R.id.layout_phone_number)
     LinearLayout mLayoutPhoneNumber;
@@ -114,8 +117,9 @@ public class PlacesDetailsActivity extends AppCompatActivity
         String placeId = getIntent().getStringExtra("place_id");
         String mGooglePlacesWebKey = getString(R.string.google_places_web_key);
         String mGoogleApiBaseUrl = getString(R.string.google_api_base_url);
-        cacheBitmap = new CacheStorage();
-        Retrofit retrofit = new Retrofit.Builder()
+        /*cacheBitmap = new CacheStorage();*/
+        Retrofit retrofit = new Retrofit
+                .Builder()
                 .baseUrl(mGoogleApiBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -123,6 +127,8 @@ public class PlacesDetailsActivity extends AppCompatActivity
         call = service.getPlaceDetails(mGooglePlacesWebKey, placeId);
         call.enqueue(startBackgroundThread);
         mPlacesDetailsProgress.setVisibility(View.VISIBLE);
+        imageViewWeakReference = new WeakReference<ImageView>(imgRestaurant);
+        recyclerViewWeakReference = new WeakReference<RecyclerView.Adapter>(mAdapter);
     }
 
     @Override
@@ -141,7 +147,14 @@ public class PlacesDetailsActivity extends AppCompatActivity
         } else {
             getParent().setResult(RESULT_OK, intent);
         }
+        finish();
         super.onBackPressed();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Runtime.getRuntime().gc();
+        super.onDestroy();
     }
 
     Callback<GetFromJson> startBackgroundThread = new Callback<GetFromJson>() {
@@ -157,11 +170,11 @@ public class PlacesDetailsActivity extends AppCompatActivity
         }
     };
 
-    @Override
+    /*@Override
     public void loadImage(String imageKey, Bitmap imageBitmap) {
         imgRestaurant.setImageBitmap(imageBitmap);
         cacheBitmap.addBitmapToMemoryCache(imageKey, imageBitmap);
-    }
+    }*/
 
     @OnClick(R.id.layout_diretion)
     public void showDirections() {
@@ -194,19 +207,18 @@ public class PlacesDetailsActivity extends AppCompatActivity
     @OnClick(R.id.iv_add_favorite)
     public void addOrRemoveFavorite() {
         String placeId = mPlacesDetails.getPlace_id();
-        mSdCard = new StorageOnSdCard();
+        mFileStorage = new InternalStorage();
         Animation favAnimation = AnimationUtils.loadAnimation(this, R.anim.favorite);
         ivAddFavorite.startAnimation(favAnimation);
         if (mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
             mUserManager.removeFavorite(mUserManager.getUserEmail(), placeId);
             ivAddFavorite.clearColorFilter();
-            mSdCard.removeFromSdCard("Favorites/" + mUserManager.getUserEmail(),placeId);
+            mFileStorage.removeFromSdCard(this, "Favorites/" + mUserManager.getUserEmail(),placeId);
         } else {
             mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
             ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
-            Gson gson = new Gson();
             String placeDetails = gson.toJson(mPlacesDetails);
-            mSdCard.addToSdCard("Favorites/" + mUserManager.getUserEmail(), placeId, placeDetails);
+            mFileStorage.addToSdCard(this, "Favorites/" + mUserManager.getUserEmail(), placeId, placeDetails);
         }
     }
 
@@ -235,11 +247,21 @@ public class PlacesDetailsActivity extends AppCompatActivity
         try{
             String photoRef = mPlacesDetails.getPhotos().get(0).getPhoto_reference();
             String imageUrl = String.format(getString(R.string.image_url), photoRef);
-            loadBitmap(imageUrl);
+            /*loadBitmap(imageUrl);*/
+            Picasso.with(this)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .error(R.drawable.image_no_image_available)
+                    .fit()
+                    .centerCrop()
+                    .into(imgRestaurant);
         } catch (NullPointerException e) {
             mImageProgressBar.setVisibility(View.GONE);
             imgRestaurant.setImageBitmap(BitmapFactory.decodeResource(getResources(),
                     R.drawable.image_no_image_available));
+        } catch (OutOfMemoryError error) {
+            error.printStackTrace();
+            Log.d("out of memory error", "errror "+error.getMessage());
         }
         String restTitle = mPlacesDetails.getName();
         String restAddress = mPlacesDetails.getFormatted_address();
@@ -324,9 +346,8 @@ public class PlacesDetailsActivity extends AppCompatActivity
      * Otherwise executes a background task inorder to load the image from a remote URL.
      * @param url
      */
-    public void loadBitmap(String url) {
+    /*public void loadBitmap(String url) {
         final String imageKey = url;
-
         final Bitmap bitmap = cacheBitmap.getBitmapFromMemCache(imageKey);
         if (bitmap != null) {
             loadImage(imageKey, bitmap);
@@ -337,7 +358,7 @@ public class PlacesDetailsActivity extends AppCompatActivity
             getImageBitmap.mImageResponse = this;
             getImageBitmap.execute(url);
         }
-    }
+    }*/
 
      /**
      * To find the distance from current position.

@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.internal.NavigationMenu;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
@@ -29,6 +30,8 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.NavigationItemClickedEvent;
+import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.interfaces.ApiInterface;
 import com.example.aldrin.places.models.nearby.GetFromJson;
@@ -44,6 +47,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.gson.Gson;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.util.HashMap;
 
@@ -70,7 +74,6 @@ public class UserhomeActivity extends AppCompatActivity
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
     private static final String TAG_INFO = "info";
     private static final String TAG_ERROR = "error";
-    private Context mContext;
 
     @BindString(R.string.google_places_web_key)
     String mGooglePlacesWebKey;
@@ -83,6 +86,7 @@ public class UserhomeActivity extends AppCompatActivity
     @BindView(R.id.nav_hdr_profile_image)
     de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
 
+    private NavigationView mNavigationView;
     private UserManager mUserManager;
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
@@ -97,7 +101,6 @@ public class UserhomeActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_userhome);
-        mContext = this;
         setViewItems();
         getLastLocation();
         LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -124,7 +127,7 @@ public class UserhomeActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri selectedImage = data.getData();
-            mUserManager.changeProfilePic(mUserEmail, selectedImage);
+            mUserManager.changeProfilePic(selectedImage);
             displayProfilePic();
             changeImageInProfileFragment();
         }
@@ -138,15 +141,19 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         mGoogleApiClient.connect();
-        mContext.registerReceiver(profileImageUpdateReceiver, new IntentFilter("image_updat"));
         super.onStart();
     }
 
     @Override
     protected void onStop() {
         mGoogleApiClient.disconnect();
-        mContext.unregisterReceiver(profileImageUpdateReceiver);
         super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Runtime.getRuntime().gc();
+        super.onDestroy();
     }
 
     @Override
@@ -154,8 +161,21 @@ public class UserhomeActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        } else if (getSupportFragmentManager().getBackStackEntryCount()>0) {
             super.onBackPressed();
+        } else {
+            NearbyPlacesFragment frag = (NearbyPlacesFragment)
+                    getSupportFragmentManager().findFragmentByTag(NearbyPlacesFragment.TAG);
+            if (frag==null || !frag.isVisible()) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.content_frame,
+                                NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
+                mNavigationView.setCheckedItem(R.id.nav_nearby_places);
+            } else {
+                finish();
+                super.onBackPressed();
+            }
         }
     }
 
@@ -166,6 +186,7 @@ public class UserhomeActivity extends AppCompatActivity
             closeDrawer();
             return true;
         }
+        EventBus.getDefault().post(new NavigationItemClickedEvent());
         item.setChecked(true);
         if (mPreviousMenuItem != null) {
             mPreviousMenuItem.setChecked(false);
@@ -176,16 +197,20 @@ public class UserhomeActivity extends AppCompatActivity
                 .beginTransaction();
         if (id == R.id.nav_nearby_places) {
             fragmentTransaction
-                    .replace(R.id.content_frame, NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
+                    .replace(R.id.content_frame,
+                            NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
         } else if (id == R.id.nav_fav_places) {
             fragmentTransaction
-                    .replace(R.id.content_frame, FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG).commit();
+                    .replace(R.id.content_frame,
+                            FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG).commit();
         } else if (id == R.id.nav_find_service) {
             fragmentTransaction
-                    .replace(R.id.content_frame, ServicesFragment.newInstance(), ServicesFragment.TAG).commit();
+                    .replace(R.id.content_frame,
+                            ServicesFragment.newInstance(), ServicesFragment.TAG).commit();
         } else if (id == R.id.nav_profile) {
             fragmentTransaction
-                    .replace(R.id.content_frame, ProfileFragment.newInstance(), ProfileFragment.TAG).commit();
+                    .replace(R.id.content_frame,
+                            ProfileFragment.newInstance(), ProfileFragment.TAG).commit();
         } else if (id == R.id.nav_logout) {
             mUserManager.logoutUser();
         }
@@ -255,6 +280,14 @@ public class UserhomeActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level == TRIM_MEMORY_RUNNING_LOW) {
+            
+        }
+    }
+
     /**
      * Change profile pic in navigation drawer when profile pic in ProfileFragment is changed.
      * Overrides the onProfilePicChanged method in the
@@ -266,27 +299,24 @@ public class UserhomeActivity extends AppCompatActivity
     }
 
     /**
-     * Broadcast receiver called when location details are changed.
-     */
-    BroadcastReceiver profileImageUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            displayProfilePic();
-        }
-    };
-
-    /**
      * Method to change the user's profile picture.
      */
     @OnClick(R.id.nav_hdr_profile_image)
     void changeProfilePic() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_READ_STORAGE);
         } else {
-            startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+            startActivityForResult(new Intent(Intent.ACTION_PICK,
+                    android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
         }
+    }
+
+    @Subscribe
+    public void OnProfileImageChanged(ProfileImageUpdatedEvent event) {
+        displayProfilePic();
     }
 
     /**
@@ -302,8 +332,8 @@ public class UserhomeActivity extends AppCompatActivity
      */
     private void setViewItems() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_layout);
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        View headerView = navigationView.inflateHeaderView(R.layout.nav_header);
+        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        View headerView = mNavigationView.inflateHeaderView(R.layout.nav_header);
         ButterKnife.bind(this, headerView);
         mUserManager = new UserManager(getApplicationContext());
         setSupportActionBar(toolbar);
@@ -311,14 +341,16 @@ public class UserhomeActivity extends AppCompatActivity
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
+
         toggle.syncState();
-        navigationView.setCheckedItem(R.id.nav_nearby_places);
-        navigationView.setNavigationItemSelectedListener(this);
+        mNavigationView.setCheckedItem(R.id.nav_nearby_places);
+        mNavigationView.setNavigationItemSelectedListener(this);
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.content_frame, NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
+                .replace(R.id.content_frame,
+                        NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
         mUserEmail = mUserManager.getUserEmail();
-        HashMap<String, String> user = mUserManager.getUserDetails(mUserEmail);
+        HashMap<String, String> user = mUserManager.getUserDetails();
         String name = user.get(UserManager.KEY_FIRST_NAME) + " " + user.get(UserManager.KEY_LAST_NAME);
         tvUser.setText(name);
         tvEmail.setText(mUserEmail);
@@ -329,9 +361,11 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to request current location of the user.
      */
     private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+        String []locationPermissions =
+                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, locationPermissions,
                     MY_PERMISSIONS_REQUEST_LOCATION);
             return;
         }
@@ -372,7 +406,7 @@ public class UserhomeActivity extends AppCompatActivity
         String serviceType = "restaurant";
         String location = lat + "," + lng;
         String searchValue = null;
-        String radius = mUserManager.getSearchRadius(mUserEmail);
+        String radius = mUserManager.getSearchRadius();
         ApiInterface service = retrofit.create(ApiInterface.class);
         Call<GetFromJson> call =
                 service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
@@ -394,6 +428,7 @@ public class UserhomeActivity extends AppCompatActivity
             Log.e(TAG_ERROR, t.toString());
         }
     };
+
 
     /**
      * Method to display user's profile image.

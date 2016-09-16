@@ -1,5 +1,6 @@
 package com.example.aldrin.places.adapters;
 
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -31,10 +32,21 @@ public class PagerAdapter extends FragmentStatePagerAdapter {
                 return tab1;
             case 1:
                 Boolean isRestaurant = true;
-                ListFragment tab2 = ListFragment.newInstance(isRestaurant);
+                Boolean isGrid = false;
+                Bundle bundle = new Bundle();
+                bundle.putBoolean("isRestaurant", isRestaurant);
+                bundle.putBoolean("isGrid", isGrid);
+                ListFragment tab2 = new ListFragment();
+                tab2.setArguments(bundle);
                 return tab2;
             case 2:
-                GridFragment tab3 = new GridFragment();
+                isRestaurant = true;
+                isGrid = true;
+                bundle = new Bundle();
+                bundle.putBoolean("isRestaurant", isRestaurant);
+                bundle.putBoolean("isGrid", isGrid);
+                ListFragment tab3 = new ListFragment();
+                tab3.setArguments(bundle);
                 return tab3;
             default:
                 return null;

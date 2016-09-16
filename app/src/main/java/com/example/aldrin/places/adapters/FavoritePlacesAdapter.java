@@ -1,23 +1,21 @@
 package com.example.aldrin.places.adapters;
 
 import android.content.Context;
-import android.content.Intent;
+import android.graphics.Color;
 import android.location.Location;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckedTextView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.Result;
-import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
-import com.example.aldrin.places.ui.fragments.FavouritePlacesFragment;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -32,15 +30,16 @@ import butterknife.ButterKnife;
 
 public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAdapter.FavoriteViewHolder> {
 
-    private List<Result> venues;
+    private List<Result> mVenues;
     private UserManager mUserManager;
+    private int mCardHighlightColor = Color.rgb(130, 201, 191);
     /**
-     * Constructor to initialize venues list.
+     * Constructor to initialize mVenues list.
      * @param context
      * @param venues
      */
     public FavoritePlacesAdapter(Context context, List<Result> venues) {
-        this.venues = venues;
+        this.mVenues = venues;
         mUserManager = new UserManager(context);
     }
 
@@ -48,19 +47,29 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     public FavoriteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.layout_card_location_details, parent, false);
+        /*itemView.getBackground().setColorFilter(Color.alpha(R.color.cardHighlightColor), PorterDuff.Mode.MULTIPLY );*/
         return new FavoriteViewHolder(itemView);
     }
 
     @Override
     public void onBindViewHolder(FavoriteViewHolder holder, int position) {
-        holder.tvRestaurantName.setText(venues.get(position).getName());
-        holder.tvAddress.setText(venues.get(position).getFormatted_address());
-        holder.tvDistance.setText(distanceFromCurrentPosition(venues.get(position)));
+        holder.tvRestaurantName.setText(mVenues.get(position).getName());
+        holder.tvAddress.setText(mVenues.get(position).getFormatted_address());
+        if (mVenues.get(position).getFormatted_address() == null) {
+            holder.tvAddress.setText(mVenues.get(position).getVicinity());
+        }
+        holder.tvDistance.setText(distanceFromCurrentPosition(mVenues.get(position)));
+        Boolean isSelected = mVenues.get(position).getSelected();
+        if (isSelected) {
+            holder.cvPlaces.setCardBackgroundColor(mCardHighlightColor);
+        } else {
+            holder.cvPlaces.setCardBackgroundColor(Color.WHITE);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return venues.size();
+        return mVenues.size();
     }
 
 
@@ -70,7 +79,10 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     public class FavoriteViewHolder extends RecyclerView.ViewHolder{
 
         View mItemView;
+        public Boolean isSelected = false;
 
+        @BindView(R.id.places_card_view)
+        CardView cvPlaces;
         @BindView(R.id.iv_venue_icon)
         ImageView ivVenueIcon;
         @BindView(R.id.tv_address)
@@ -95,7 +107,7 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
 
 
     public void clearData() {
-        venues.clear();
+        mVenues.clear();
     }
 
     /**
