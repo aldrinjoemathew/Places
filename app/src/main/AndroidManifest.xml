@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <application
@@ -24,16 +24,14 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <activity
-            android:name=".ui.activities.SplashActivity">
+        <activity android:name=".ui.activities.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.activities.LoginActivity" />
+        <activity android:name=".ui.activities.LoginActivity" />
         <activity
             android:name=".ui.activities.SignupActivity"
             android:parentActivityName=".ui.activities.LoginActivity" />
@@ -44,11 +42,16 @@
         <activity
             android:name=".ui.activities.UserhomeActivity"
             android:label="@string/title_activity_userhome"
-            android:theme="@style/AppTheme" />
-
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:theme="@style/AppTheme"
+            android:launchMode="singleTop"/>
         <activity
-            android:name=".ui.activities.PlacesDetailsActivity"/>
-
+            android:name=".ui.activities.PlacesDetailsActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleInstance"/>
+        <activity
+            android:name=".ui.activities.PlaceDetailsActivity"
+            android:launchMode="singleInstance"/>
     </application>
 
 </manifest>

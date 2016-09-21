@@ -1,5 +1,6 @@
 package com.example.aldrin.places.models.placesdetails;
 
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -20,6 +21,12 @@ public class Result {
     private float rating;
     private List<Review> reviews;
     private String place_id;
+    private URL icon;
+
+    public URL getIcon() {
+        return icon;
+    }
+
     private Boolean isSelected = false;
 
     public Boolean getSelected() {

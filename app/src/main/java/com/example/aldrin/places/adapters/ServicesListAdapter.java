@@ -46,12 +46,12 @@ public class ServicesListAdapter extends RecyclerView.Adapter<ServicesListAdapte
         return mServices;
     }
 
-    public class ServicesViewHolder extends RecyclerView.ViewHolder {
+    class ServicesViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.tv_services)
         TextView tvService;
 
-        public ServicesViewHolder(View itemView) {
+        ServicesViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }

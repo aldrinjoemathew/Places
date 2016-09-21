@@ -9,4 +9,6 @@
     <color name="backgroundColor">#DDE3EA</color>
     <color name="cardHighlightColor">#82c9bf</color>
     <color name="cardNormalColor">#ffffff</color>
+
+    <color name="black_overlay">#66000000</color>
 </resources>

@@ -3,9 +3,12 @@ package com.example.aldrin.places.ui.fragments;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,20 +47,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ServicesFragment extends Fragment {
 
     public static final String TAG = ServicesFragment.class.getSimpleName();
-    private static final String TAG_ERROR = "error";
+    private static final String TAG_ERROR = "ERROR";
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private List<String> mServiceTypeTitles;
     private List<String> mServiceTypes;
     private UserManager mUserManager;
-    private TextView tvFragmentTitle;
+    private Retrofit retrofit;
+    private Call<GetFromJson> call;
+    private Bundle bundle = new Bundle();
+    private Gson gson = new Gson();
 
+    @BindView(R.id.layout_services)
+    CoordinatorLayout layoutSevices;
     @BindView(R.id.recycler_view_services)
     RecyclerView mRecyclerView;
     @BindView(R.id.et_search_service)
-    EditText mSearchService;
-    @BindView(R.id.iv_search_service)
-    ImageView ivSearchService;
+    SearchView mSearchService;
     @BindString(R.string.google_api_base_url)
     String mGoogleApiBaseUrl;
     @BindString(R.string.google_places_web_key)
@@ -82,24 +88,25 @@ public class ServicesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
         initializeRecyclerView();
+        mSearchService.setIconified(false);
         mUserManager = new UserManager(getContext());
-        tvFragmentTitle = (TextView) getActivity().findViewById(R.id.tv_fragment_title);
-        tvFragmentTitle.setText("Services");
         String[] serviceTypes = getString(R.string.services).split(",");
         mServiceTypes = new LinkedList<String>(Arrays.asList(serviceTypes));
         mRecyclerView.addOnItemTouchListener(startBackgroundThread);
+        retrofit = new Retrofit.Builder()
+                .baseUrl(mGoogleApiBaseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        tvFragmentTitle.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        tvFragmentTitle.setVisibility(View.GONE);
     }
 
     /**
@@ -110,19 +117,14 @@ public class ServicesFragment extends Fragment {
             new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
         @Override
         public void onItemClick(View view, int position) {
-            String searchValue = mSearchService.getText().toString();
-            if (searchValue!=null) {
+            String searchValue = mSearchService.getQuery().toString();
+            if (!searchValue.isEmpty()) {
                 String serviceType = mServiceTypes.get(position);
-                Retrofit retrofit = new Retrofit.Builder()
-                        .baseUrl(mGoogleApiBaseUrl)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build();
                 String loc[] = mUserManager.getLocation();
                 String location = loc[0] + "," + loc[1];
                 String radius = mUserManager.getSearchRadius();
                 ApiInterface service = retrofit.create(ApiInterface.class);
-                Call<GetFromJson> call =
-                        service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
+                call = service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
                                 location, radius);
                 call.enqueue(displayServicesInNewFragment);
                 Boolean isRestaurant = false;
@@ -131,29 +133,34 @@ public class ServicesFragment extends Fragment {
                                 .beginTransaction();
                 fragmentTransaction.addToBackStack(null);
                 String serviceName = mServiceTypeTitles.get(position);
-                Bundle bundle = new Bundle();
                 bundle.putBoolean("isRestaurant", isRestaurant);
                 bundle.putString("service", serviceName);
                 ListFragment tab2 = new ListFragment();
                 tab2.setArguments(bundle);
                 fragmentTransaction.replace(R.id.content_frame,
                         tab2, ListFragment.TAG).commit();
+            } else {
+                Snackbar.make(layoutSevices, "Enter a searchtext", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("OK", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                mSearchService.requestFocus();
+                            }
+                        })
+                        .show();
             }
         }
 
         @Override
         public void onItemLongClick(View view, int position) {
-            Log.i("info", "long clicked" + position);
         }
 
         @Override
         public void onDoubleTap(View childView, int childAdapterPosition) {
-
         }
 
         @Override
         public void onFling(View childView1, View childView2, int pos1, int pos2) {
-
         }
     });
 
@@ -164,7 +171,6 @@ public class ServicesFragment extends Fragment {
     Callback<GetFromJson> displayServicesInNewFragment = new Callback<GetFromJson>() {
         @Override
         public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
-            Gson gson = new Gson();
             String apiResult = gson.toJson(response.body());
             mUserManager.updateNearbyResponse(false, apiResult);
             EventBus.getDefault().post(new ApiResponseUpdatedEvent(null));

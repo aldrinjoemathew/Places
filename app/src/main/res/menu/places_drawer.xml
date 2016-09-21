@@ -27,6 +27,11 @@
                 android:title="Profile" />
             <item
                 android:checkable="true"
+                android:id="@+id/nav_gallery"
+                android:icon="@drawable/ic_favorite_border_black_24dp"
+                android:title="Gallery"/>
+            <item
+                android:checkable="true"
                 android:id="@+id/nav_logout"
                 android:icon="@drawable/ic_menu_share"
                 android:title="Logout" />

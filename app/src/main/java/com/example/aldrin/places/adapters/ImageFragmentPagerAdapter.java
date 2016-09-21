@@ -1,27 +1,28 @@
 package com.example.aldrin.places.adapters;
 
-import android.graphics.Bitmap;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.util.LruCache;
+import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.aldrin.places.models.placesdetails.Result;
 import com.example.aldrin.places.ui.fragments.SwipeFragment;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * Created by aldrin on 26/8/16.
  */
 
-public class ImageFragmentPagerAdapter extends FragmentPagerAdapter {
-    int imageCount;
-    private Result mPlacesDetails;
-    private LruCache<String, Bitmap> mMemoryCache;
-    public ImageFragmentPagerAdapter(FragmentManager fm, int count, Result result, LruCache<String, Bitmap> memoryCache) {
+public class ImageFragmentPagerAdapter extends FragmentStatePagerAdapter {
+
+    private int imageCount;
+    private List<String> mImageRefs;
+
+    public ImageFragmentPagerAdapter(FragmentManager fm, List<String> imageRefs) {
         super(fm);
-        imageCount = count;
-        mPlacesDetails = result;
-        mMemoryCache = memoryCache;
+        imageCount = imageRefs.size();
+        mImageRefs = imageRefs;
     }
 
     @Override
@@ -31,6 +32,11 @@ public class ImageFragmentPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        return SwipeFragment.newInstance(position, mPlacesDetails, mMemoryCache);
+        SwipeFragment fr = new SwipeFragment();
+        Bundle bundle = new Bundle();
+        bundle.putInt("position", position);
+        bundle.putSerializable("imagerefs", (Serializable) mImageRefs);
+        fr.setArguments(bundle);
+        return fr;
     }
 }

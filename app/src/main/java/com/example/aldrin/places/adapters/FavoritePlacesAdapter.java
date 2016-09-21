@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.Result;
+import com.squareup.picasso.Picasso;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -33,6 +34,7 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     private List<Result> mVenues;
     private UserManager mUserManager;
     private int mCardHighlightColor = Color.rgb(130, 201, 191);
+    private Context mContext;
     /**
      * Constructor to initialize mVenues list.
      * @param context
@@ -40,6 +42,7 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
      */
     public FavoritePlacesAdapter(Context context, List<Result> venues) {
         this.mVenues = venues;
+        mContext = context;
         mUserManager = new UserManager(context);
     }
 
@@ -47,7 +50,6 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     public FavoriteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.layout_card_location_details, parent, false);
-        /*itemView.getBackground().setColorFilter(Color.alpha(R.color.cardHighlightColor), PorterDuff.Mode.MULTIPLY );*/
         return new FavoriteViewHolder(itemView);
     }
 
@@ -65,6 +67,9 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
         } else {
             holder.cvPlaces.setCardBackgroundColor(Color.WHITE);
         }
+        Picasso.with(mContext)
+                .load(mVenues.get(position).getIcon().toString())
+                .into(holder.ivVenueIcon);
     }
 
     @Override
@@ -76,10 +81,7 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
     /**
      *  Custom holder class for inflating the view.
      */
-    public class FavoriteViewHolder extends RecyclerView.ViewHolder{
-
-        View mItemView;
-        public Boolean isSelected = false;
+    class FavoriteViewHolder extends RecyclerView.ViewHolder{
 
         @BindView(R.id.places_card_view)
         CardView cvPlaces;
@@ -96,15 +98,13 @@ public class FavoritePlacesAdapter extends RecyclerView.Adapter<FavoritePlacesAd
         @BindView(R.id.ratingbar_venue)
         RatingBar ratingVenue;
 
-        public FavoriteViewHolder(View itemView) {
+        FavoriteViewHolder(View itemView) {
             super(itemView);
-            mItemView = itemView;
             ButterKnife.bind(this, itemView);
             itemView.setClickable(true);
             itemView.setLongClickable(true);
         }
     }
-
 
     public void clearData() {
         mVenues.clear();

@@ -1,41 +1,42 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     tools:context=".ui.fragments.ProfileFragment">
-    <ScrollView
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="@dimen/image_height">
+        <android.support.design.widget.CollapsingToolbarLayout
+            android:id="@+id/ctb_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            app:contentScrim="?attr/colorPrimary"
+            app:expandedTitleMarginStart="48dp"
+            app:expandedTitleMarginEnd="64dp">
+            <ImageView
+                android:id="@+id/iv_profile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_default_dp"
+                app:layout_collapseMode="parallax"/>
+        </android.support.design.widget.CollapsingToolbarLayout>
+    </android.support.design.widget.AppBarLayout>
+    <android.support.v4.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/profile_image"
-                android:layout_width="192dp"
-                android:layout_height="192dp"
-                android:layout_centerHorizontal="true"
-                android:padding="10dp"
-                android:cropToPadding="true"
-                android:src="@drawable/ic_default_dp" />
-            <android.support.design.widget.FloatingActionButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                app:fabSize="normal"
-                app:srcCompat="@drawable/ic_photo_camera_white_24dp"
-                app:elevation="@dimen/elevation"
-                android:layout_above="@+id/first_name_layout"
-                android:layout_alignRight="@+id/profile_image"
-                android:layout_alignEnd="@+id/profile_image"
-                android:id="@+id/fab_change_image" />
             <android.support.design.widget.TextInputLayout
                 style="@style/textInputLayoutStyle"
                 android:id="@+id/first_name_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/profile_image"
+
                 app:hintTextAppearance="@style/MyHintText"
                 app:errorTextAppearance="@style/error_appearance">
                 <android.support.v7.widget.AppCompatEditText
@@ -129,5 +130,5 @@
                 android:layout_alignLeft="@id/phone_number_layout"
                 android:layout_alignRight="@id/phone_number_layout"/>
         </RelativeLayout>
-    </ScrollView>
-</LinearLayout>
+    </android.support.v4.widget.NestedScrollView>
+</android.support.design.widget.CoordinatorLayout>

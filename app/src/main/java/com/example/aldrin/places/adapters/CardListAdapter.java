@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.Result;
@@ -70,9 +71,10 @@ public class CardListAdapter extends RecyclerView.Adapter<CardListAdapter.CardVi
         }
         Picasso.with(mContext)
                 .load(mVenues.get(position).getIcon().toString())
-                .placeholder(R.drawable.ic_image_placeholder)
-                .error(R.drawable.image_no_image_available)
                 .into(holder.ivVenueIcon);
+        /*Glide.with(mContext)
+                .load(mVenues.get(position).getIcon().toString())
+                .into(holder.ivVenueIcon);*/
     }
 
     @Override

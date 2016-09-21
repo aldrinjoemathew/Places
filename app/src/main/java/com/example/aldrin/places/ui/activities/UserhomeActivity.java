@@ -2,19 +2,16 @@ package com.example.aldrin.places.ui.activities;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.internal.NavigationMenu;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
@@ -30,12 +27,14 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.ConfigurationChnagedEvent;
 import com.example.aldrin.places.events.NavigationItemClickedEvent;
 import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.interfaces.ApiInterface;
 import com.example.aldrin.places.models.nearby.GetFromJson;
 import com.example.aldrin.places.ui.fragments.FavouritePlacesFragment;
+import com.example.aldrin.places.ui.fragments.GalleryGridFragment;
 import com.example.aldrin.places.ui.fragments.NearbyPlacesFragment;
 import com.example.aldrin.places.ui.fragments.ProfileFragment;
 import com.example.aldrin.places.ui.fragments.ServicesFragment;
@@ -45,6 +44,7 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -72,8 +72,10 @@ public class UserhomeActivity extends AppCompatActivity
     private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
     private static final int MY_PERMISSIONS_READ_STORAGE = 2;
-    private static final String TAG_INFO = "info";
-    private static final String TAG_ERROR = "error";
+    private static final String TAG_INFO = "INFO";
+    private static final String TAG_ERROR = "ERROR";
+    private static final String []locationPermissions =
+            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
 
     @BindString(R.string.google_places_web_key)
     String mGooglePlacesWebKey;
@@ -86,16 +88,19 @@ public class UserhomeActivity extends AppCompatActivity
     @BindView(R.id.nav_hdr_profile_image)
     de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
 
+    private DrawerLayout mDrawer;
     private NavigationView mNavigationView;
     private UserManager mUserManager;
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
-    private Location mLastLocation;
+    private Location mLastLocation = new Location("lastLocation");
     private String mUserEmail;
     private LocationRequest mLocationRequest;
     private MenuItem mPreviousMenuItem;
     private Boolean mNavigateUpFromChild = false;
     private Boolean mIsRestaurant = true;
+    private Call<GetFromJson> mCallback;
+    private Retrofit mRetrofit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +114,10 @@ public class UserhomeActivity extends AppCompatActivity
         if (!locationEnabled) {
             buildAlertMessageNoGps();
         }
+        mRetrofit = new Retrofit.Builder()
+                .baseUrl(mGoogleApiBaseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
         mLocationRequest = new LocationRequest();
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         mLocationRequest.setInterval(10000);
@@ -158,9 +167,8 @@ public class UserhomeActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+            mDrawer.closeDrawer(GravityCompat.START);
         } else if (getSupportFragmentManager().getBackStackEntryCount()>0) {
             super.onBackPressed();
         } else {
@@ -211,6 +219,10 @@ public class UserhomeActivity extends AppCompatActivity
             fragmentTransaction
                     .replace(R.id.content_frame,
                             ProfileFragment.newInstance(), ProfileFragment.TAG).commit();
+        } else if (id == R.id.nav_gallery) {
+            fragmentTransaction
+                    .replace(R.id.content_frame,
+                            GalleryGridFragment.newInstance(), GalleryGridFragment.TAG).commit();
         } else if (id == R.id.nav_logout) {
             mUserManager.logoutUser();
         }
@@ -255,6 +267,12 @@ public class UserhomeActivity extends AppCompatActivity
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        EventBus.getDefault().post(new ConfigurationChnagedEvent());
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_LOCATION: {
@@ -277,14 +295,6 @@ public class UserhomeActivity extends AppCompatActivity
                 }
                 return;
             }
-        }
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        if (level == TRIM_MEMORY_RUNNING_LOW) {
-            
         }
     }
 
@@ -323,8 +333,7 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to close the navigation drawer.
      */
     private void closeDrawer() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        mDrawer.closeDrawer(GravityCompat.START);
     }
 
     /**
@@ -337,11 +346,10 @@ public class UserhomeActivity extends AppCompatActivity
         ButterKnife.bind(this, headerView);
         mUserManager = new UserManager(getApplicationContext());
         setSupportActionBar(toolbar);
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-
+                this, mDrawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawer.addDrawerListener(toggle);
         toggle.syncState();
         mNavigationView.setCheckedItem(R.id.nav_nearby_places);
         mNavigationView.setNavigationItemSelectedListener(this);
@@ -361,8 +369,6 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to request current location of the user.
      */
     private void startLocationUpdates() {
-        String []locationPermissions =
-                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, locationPermissions,
@@ -378,17 +384,13 @@ public class UserhomeActivity extends AppCompatActivity
      * Method to access the user's last location.
      */
     private void getLastLocation() {
-        Location lastLocation = new Location("last_location");
-        lastLocation.setLatitude(0);
-        lastLocation.setLongitude(0);
         try {
             String[] loc = mUserManager.getLocation();
-            lastLocation.setLatitude(Double.parseDouble(loc[0]));
-            lastLocation.setLongitude(Double.parseDouble(loc[1]));
+            mLastLocation.setLatitude(Double.parseDouble(loc[0]));
+            mLastLocation.setLongitude(Double.parseDouble(loc[1]));
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
-        mLastLocation = lastLocation;
     }
 
     /**
@@ -399,19 +401,14 @@ public class UserhomeActivity extends AppCompatActivity
         String lat = String.valueOf(mCurrentLocation.getLatitude());
         String lng = String.valueOf(mCurrentLocation.getLongitude());
         mUserManager.updateLocation(lat, lng);
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(mGoogleApiBaseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        String serviceType = "restaurant";
+        String serviceType = getString(R.string.restaurant);
         String location = lat + "," + lng;
         String searchValue = null;
         String radius = mUserManager.getSearchRadius();
-        ApiInterface service = retrofit.create(ApiInterface.class);
-        Call<GetFromJson> call =
-                service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
+        ApiInterface service = mRetrofit.create(ApiInterface.class);
+        mCallback = service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
                         location, radius);
-        call.enqueue(startBackgroundThread);
+        mCallback.enqueue(startBackgroundThread);
     }
 
     Callback<GetFromJson> startBackgroundThread = new Callback<GetFromJson>() {
@@ -442,7 +439,11 @@ public class UserhomeActivity extends AppCompatActivity
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_READ_STORAGE);
             }
-            imageViewProfile.setImageURI(profileImage);
+            Picasso.with(this)
+                    .load(profileImage)
+                    .fit()
+                    .centerCrop()
+                    .into(imageViewProfile);
         } catch (NullPointerException e) {
             Log.e(TAG_ERROR, e.toString());
         }
@@ -456,7 +457,6 @@ public class UserhomeActivity extends AppCompatActivity
         try {
             ProfileFragment pf = (ProfileFragment) getSupportFragmentManager().findFragmentByTag(ProfileFragment.TAG);
             Boolean vis = pf.isVisible();
-            Log.i("visible", vis.toString());
             if (vis) {
                 pf.displayProfilePic();
             }

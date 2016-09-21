@@ -3,12 +3,14 @@ package com.example.aldrin.places.ui.fragments;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,11 +20,11 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.FavoritePlacesAdapter;
-import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.InternalStorage;
+import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.Result;
-import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
+import com.example.aldrin.places.ui.activities.PlaceDetailsActivity;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -41,18 +43,23 @@ import butterknife.OnClick;
 public class FavouritePlacesFragment extends Fragment {
 
     public static final String TAG = FavouritePlacesFragment.class.getSimpleName();
-    private static final String SD_PATH = Environment.getExternalStorageDirectory().getPath();
     private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private List<Result> cardVenueList = new ArrayList<>();
     private List<String> mToDeleteList = new ArrayList<>();
     private List<String> mFavorites = new ArrayList<>();
+    private Gson gson = new Gson();
     private UserManager mUserManager;
     private String mUserEmail;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private InternalStorage mFileStorage;
     private Boolean mLongClickEnabled = false;
-    private TextView tvFragmentTitle;
+    private Boolean mDragEnabled = false;
+    private Result venue;
+    private String placeId;
+    private Intent placesDetailsIntent;
+    private Animation lonClickAnimation;
+    private Handler handler = new Handler();
 
     @BindView(R.id.recycler_favorite)
     RecyclerView mRecyclerView;
@@ -93,12 +100,48 @@ public class FavouritePlacesFragment extends Fragment {
         mUserManager = new UserManager(getContext());
         mUserEmail = mUserManager.getUserEmail();
         mFileStorage = new InternalStorage();
-        tvFragmentTitle = (TextView) getActivity().findViewById(R.id.tv_fragment_title);
-        tvFragmentTitle.setText("Favorites");
         getFavoritesFromSdCard();
         displayFavorites();
         mRecyclerView.addOnItemTouchListener(onFavoriteClickListener);
+        placesDetailsIntent = new Intent(getContext(), PlaceDetailsActivity.class);
+        lonClickAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.long_click);
+        ItemTouchHelper itemTouch = new ItemTouchHelper(ithCallback);
+        itemTouch.attachToRecyclerView(mRecyclerView);
     }
+
+    ItemTouchHelper.Callback ithCallback = new ItemTouchHelper.Callback() {
+        @Override
+        public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+            int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+            return makeMovementFlags(dragFlags, swipeFlags);
+        }
+
+        @Override
+        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            mDragEnabled = true;
+            int pos1 = viewHolder.getAdapterPosition();
+            int pos2 = target.getAdapterPosition();
+            Collections.swap(cardVenueList, pos1, pos2);
+            /*cardVenueList.add(pos2, cardVenueList.get(pos1));
+            cardVenueList.remove(pos1);*/
+            mAdapter.notifyItemMoved(pos1, pos2);
+            mUserManager.swapFavorites(pos1, pos2);
+            return true;
+        }
+
+        @Override
+        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            int pos = viewHolder.getAdapterPosition();
+            String placeId = cardVenueList.get(pos).getPlace_id();
+            if (mUserManager.checkFavorite(mUserEmail, placeId)) {
+                mUserManager.removeFavorite(mUserEmail, placeId);
+                mFileStorage.removeFromSdCard(getContext(), getString(R.string.favorites_path,mUserEmail), placeId);
+            }
+            cardVenueList.remove(pos);
+            mAdapter.notifyItemRemoved(pos);
+        }
+    };
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -115,18 +158,6 @@ public class FavouritePlacesFragment extends Fragment {
                 }
             }
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        tvFragmentTitle.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        tvFragmentTitle.setVisibility(View.GONE);
     }
 
     RecyclerView.OnItemTouchListener onFavoriteClickListener = new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
@@ -147,23 +178,31 @@ public class FavouritePlacesFragment extends Fragment {
                     fabDeleteFavs.setVisibility(View.GONE);
                 }
             } else {
-                Result venue = cardVenueList.get(position);
-                String placeId = venue.getPlace_id();
-                Intent placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
+                venue = cardVenueList.get(position);
+                placeId = venue.getPlace_id();
                 placesDetailsIntent.putExtra("place_id", placeId);
                 getActivity().startActivityForResult(placesDetailsIntent, NAVIGATE_UP_FROM_CHILD);
             }
         }
 
         @Override
-        public void onItemLongClick(View view, int position) {
-                mLongClickEnabled = true;
-                fabDeleteFavs.setVisibility(View.VISIBLE);
-                mToDeleteList.add(cardVenueList.get(position).getPlace_id());
-                Animation lonClickAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.long_click);
-                view.startAnimation(lonClickAnimation);
-                cardVenueList.get(position).setSelected(true);
-                mAdapter.notifyDataSetChanged();
+        public void onItemLongClick(final View view, final int position) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (mDragEnabled) {
+                        mDragEnabled  = false;
+                        return;
+                    }
+                    mLongClickEnabled = true;
+                    fabDeleteFavs.setVisibility(View.VISIBLE);
+                    mToDeleteList.add(cardVenueList.get(position).getPlace_id());
+                    view.startAnimation(lonClickAnimation);
+                    cardVenueList.get(position).setSelected(true);
+                    mAdapter.notifyDataSetChanged();
+                }
+            }, 800);
+
         }
 
         @Override
@@ -173,22 +212,25 @@ public class FavouritePlacesFragment extends Fragment {
 
         @Override
         public void onFling(View childView1, View childView2, int pos1, int pos2) {
-            if (!mLongClickEnabled) {
+            /*if (!mLongClickEnabled) {
                 Collections.swap(cardVenueList, pos1, pos2);
                 cardVenueList.add(pos2, cardVenueList.get(pos1));
                 cardVenueList.remove(pos1);
                 mAdapter.notifyDataSetChanged();
                 mUserManager.swapFavorites(pos1, pos2);
-            }
+            }*/
         }
     });
 
     @OnClick(R.id.fab_delete_favs)
     public void deleteFavs() {
-        for (int i = 0; i< mToDeleteList.size(); i++) {
-            if (mUserManager.checkFavorite(mUserManager.getUserEmail(), mToDeleteList.get(i))) {
-                mUserManager.removeFavorite(mUserManager.getUserEmail(), mToDeleteList.get(i));
-                mFileStorage.removeFromSdCard(getContext(), "Favorites/" + mUserManager.getUserEmail(), mToDeleteList.get(i));
+        int length = mToDeleteList.size();
+        String venueId;
+        for (int i = 0; i<length; i++) {
+            venueId = mToDeleteList.get(i);
+            if (mUserManager.checkFavorite(mUserEmail, venueId)) {
+                mUserManager.removeFavorite(mUserEmail, venueId);
+                mFileStorage.removeFromSdCard(getContext(), getString(R.string.favorites_path,mUserEmail), venueId);
             }
         }
         mRecyclerView.removeAllViews();
@@ -220,14 +262,18 @@ public class FavouritePlacesFragment extends Fragment {
      * Used to retrieve favorite place details stored in SD card.
      */
     private void getFavoritesFromSdCard() {
-        Gson gson = new Gson();
         String favorites = mUserManager.getFavorite();
         if (favorites != null) {
+            Log.i("fav", favorites);
             String[] favs = favorites.split(",");
-            for (int i=0; i<favs.length; i++) {
-                if (favs[i]!=null && favs[i].length()>0) {
-                    mFavorites.add(favs[i]);
-                    String placeDetails = mFileStorage.getFromSdCard(getContext(), "Favorites/" + mUserEmail, favs[i]);
+            int length = favs.length;
+            for (int i=0; i<length; i++) {
+                String favorite = favs[i];
+
+                if (favorite!=null && favorite.length()>0) {
+                    mFavorites.add(favorite);
+                    String placeDetails = mFileStorage.getFromSdCard(getContext(),
+                            getString(R.string.favorites_path,mUserEmail), favorite);
                     com.example.aldrin.places.models.placesdetails.Result venue =
                             gson.fromJson(placeDetails, Result.class);
                     cardVenueList.add(venue);

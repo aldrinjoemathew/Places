@@ -16,6 +16,15 @@ public class UserInformation {
     private String mImageUri;
     private String mApiResponse;
     private String mFavoritePlaces;
+    private String mFavoriteImages;
+
+    public void setmFavoriteImages(String mFavoriteImages) {
+        this.mFavoriteImages = mFavoriteImages;
+    }
+
+    public String getmFavoriteImages() {
+        return mFavoriteImages;
+    }
 
     public String getmFavoritePlaces() {
         return mFavoritePlaces;

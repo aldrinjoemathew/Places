@@ -5,7 +5,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.aldrin.places.ui.fragments.GridFragment;
 import com.example.aldrin.places.ui.fragments.ListFragment;
 import com.example.aldrin.places.ui.fragments.MapFragment;
 

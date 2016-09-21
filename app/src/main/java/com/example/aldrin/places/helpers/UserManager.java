@@ -28,22 +28,25 @@ import static android.content.Context.NOTIFICATION_SERVICE;
  */
 
 public class UserManager {
-    SharedPreferences mPreferences;
-    SharedPreferences.Editor mPrefEditor;
-    Context mContext;
     private static final int PRIVATE_MODE = 0;
     private static final String PREFER_NAME = "Accounts";
     private static final String IS_USER_LOGIN = "IsUserLoggedIn";
-    public static final String KEY_LOGGED_IN_EMAIL = "email";
-    public static final String KEY_EMAIL = "email";
+    private static final String KEY_LOGGED_IN_EMAIL = "email";
+    private static final String KEY_EMAIL = "email";
     public static final String KEY_FIRST_NAME = "firstname";
     public static final String KEY_LAST_NAME = "lastname";
-    public static final String KEY_PHONE_NUMBER = "phonenumber";
-    public static final String KEY_RESTAURANT_RESPONSE = "restauantResponse";
-    public static final String KEY_SERVICES_RESPONSE = "servicesResponse";
-    public static final String KEY_CURRENT_LAT = "lat";
-    public static final String KEY_CURRENT_LNG = "lng";
+    private static final String KEY_PHONE_NUMBER = "phonenumber";
+    private static final String KEY_RESTAURANT_RESPONSE = "restauantResponse";
+    private static final String KEY_SERVICES_RESPONSE = "servicesResponse";
+    private static final String KEY_CURRENT_LAT = "lat";
+    private static final String KEY_CURRENT_LNG = "lng";
     private String mUserEmail;
+    private String mDetailsJson;
+    private Gson mGson = new Gson();
+    private UserInformation mUserInfo;
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mPrefEditor;
+    private Context mContext;
 
     public UserManager(Context context) {
         mContext = context;
@@ -98,19 +101,17 @@ public class UserManager {
      * @return radius
      */
     public String getSearchRadius() {
-        String userDetailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
-        return userInfo.getmSearchRadius();
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        return mUserInfo.getmSearchRadius();
     }
 
     public void updateSearchRadius(String radius) {
-        String detailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        userInfo.setmSearchRadius(radius);
-        String userDetails = gson.toJson(userInfo);
-        mPrefEditor.putString(mUserEmail,userDetails);
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        mUserInfo.setmSearchRadius(radius);
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(mUserEmail, mDetailsJson);
         mPrefEditor.commit();
     }
 
@@ -169,9 +170,8 @@ public class UserManager {
     public void createNewAccount(UserInformation newUser){
         newUser.setmConfirmPassword(null);
         newUser.setmSearchRadius(mContext.getString(R.string.default_search_radius));
-        Gson gson = new Gson();
-        String json = gson.toJson(newUser);
-        mPrefEditor.putString(newUser.getmEmail(),json);
+        mDetailsJson = mGson.toJson(newUser);
+        mPrefEditor.putString(newUser.getmEmail(), mDetailsJson);
         mPrefEditor.commit();
     }
 
@@ -182,18 +182,17 @@ public class UserManager {
      */
 
     public Boolean changeAccountDetails(UserInformation newInfo) {
-        String detailsJson = mPreferences.getString(newInfo.getmEmail(),null);
-        Gson gson = new Gson();
-        UserInformation oldInfo = gson.fromJson(detailsJson, UserInformation.class);
-        Boolean detailsChanged = oldInfo.equals(newInfo);
+        mDetailsJson = mPreferences.getString(newInfo.getmEmail(),null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        Boolean detailsChanged = mUserInfo.equals(newInfo);
         if (!detailsChanged) {
             return false;
         }
-        oldInfo.setmFirstName(newInfo.getmFirstName());
-        oldInfo.setmLastName(newInfo.getmLastName());
-        oldInfo.setmPhoneNumber(newInfo.getmPhoneNumber());
-        String userDetails = gson.toJson(oldInfo);
-        mPrefEditor.putString(newInfo.getmEmail(),userDetails);
+        mUserInfo.setmFirstName(newInfo.getmFirstName());
+        mUserInfo.setmLastName(newInfo.getmLastName());
+        mUserInfo.setmPhoneNumber(newInfo.getmPhoneNumber());
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(newInfo.getmEmail(), mDetailsJson);
         mPrefEditor.commit();
         return true;
     }
@@ -203,12 +202,11 @@ public class UserManager {
      * @param uriProfilePic
      */
     public void changeProfilePic(Uri uriProfilePic) {
-        String detailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        userInfo.setmImageUri(uriProfilePic.toString());
-        String userDetails = gson.toJson(userInfo);
-        mPrefEditor.putString(mUserEmail,userDetails);
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        mUserInfo.setmImageUri(uriProfilePic.toString());
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(mUserEmail, mDetailsJson);
         mPrefEditor.commit();
     }
 
@@ -218,10 +216,9 @@ public class UserManager {
      * @return
      */
     public Uri getProfilePic(String email) {
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        String uri =  userInfo.getmImageUri();
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        String uri =  mUserInfo.getmImageUri();
         return Uri.parse(uri);
     }
     /**
@@ -246,12 +243,11 @@ public class UserManager {
      */
     public void resetPassword(String email){
         String newPassword = generatePassword();
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        userInfo.setmPassword(newPassword);
-        String json = gson.toJson(userInfo);
-        mPrefEditor.putString(userInfo.getmEmail(),json);
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        mUserInfo.setmPassword(newPassword);
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(mUserInfo.getmEmail(), mDetailsJson);
         mPrefEditor.commit();
 
         Intent intent = new Intent(mContext, ChangePasswordActivity.class);
@@ -280,13 +276,12 @@ public class UserManager {
         if (!userExists) {
             return false;
         }
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        if (userInfo.getmPassword().equals(oldPassword)) {
-            userInfo.setmPassword(newPassword);
-            String json = gson.toJson(userInfo);
-            mPrefEditor.putString(userInfo.getmEmail(),json);
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        if (mUserInfo.getmPassword().equals(oldPassword)) {
+            mUserInfo.setmPassword(newPassword);
+            mDetailsJson = mGson.toJson(mUserInfo);
+            mPrefEditor.putString(mUserInfo.getmEmail(), mDetailsJson);
             mPrefEditor.commit();
             return true;
         }
@@ -298,22 +293,21 @@ public class UserManager {
      * @return the generated password.
      */
     private String generatePassword() {
+        StringBuilder mStringBuilder = new StringBuilder();
         String alphabets = mContext.getString(R.string.alphabets) + mContext.getString(R.string.alphabets).toLowerCase();
         char[] startingPasswordCharacterArray = alphabets.toCharArray();
         String alphaNumerics = alphabets + mContext.getString(R.string.numbers);
         char[] remainingPasswordCharacterArray = alphaNumerics.toCharArray();
-        StringBuilder passwordBuilder = new StringBuilder();
         Random random = new Random();
         char firstPasswordCharacter =
                 startingPasswordCharacterArray[random.nextInt(startingPasswordCharacterArray.length)];
-        passwordBuilder.append(firstPasswordCharacter);
+        mStringBuilder.append(firstPasswordCharacter);
         for (int i = 0; i < 6; i++) {
             firstPasswordCharacter =
                     remainingPasswordCharacterArray[random.nextInt(remainingPasswordCharacterArray.length)];
-            passwordBuilder.append(firstPasswordCharacter);
+            mStringBuilder.append(firstPasswordCharacter);
         }
-        String newPassword = passwordBuilder.toString();
-        return newPassword;
+        return mStringBuilder.toString();
     }
 
     /**
@@ -324,9 +318,8 @@ public class UserManager {
      */
     public HashMap<String, String> getUserDetails() {
         HashMap<String, String> user = new HashMap<String, String>();
-        String userDetailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(userDetailsJson, UserInformation.class);
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        UserInformation userInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
         user.put(KEY_FIRST_NAME, userInfo.getmFirstName());
         user.put(KEY_LAST_NAME, userInfo.getmLastName());
         user.put(KEY_PHONE_NUMBER, userInfo.getmPhoneNumber());
@@ -340,10 +333,9 @@ public class UserManager {
      * @return true if password is correct, false otherwise.
      */
     public Boolean validateUser (String email, String password) {
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        if (userInfo.getmPassword().equals(password))
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        if (mUserInfo.getmPassword().equals(password))
             return true;
         else return false;
     }
@@ -355,20 +347,22 @@ public class UserManager {
      * @param placeId
      */
     public void addFavorite(String email, String placeId) {
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        StringBuilder sb = new StringBuilder();
-        if (userInfo.getmFavoritePlaces() != null) {
-            sb.append(userInfo.getmFavoritePlaces());
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        StringBuilder mStringBuilder = new StringBuilder();
+        if (mUserInfo.getmFavoritePlaces() != null) {
+            mStringBuilder.append(mUserInfo.getmFavoritePlaces());
         }
-        if (sb != null) {
-            sb.append(",");
+        if (checkFavorite(email, placeId)){
+            return;
         }
-        sb.append(placeId);
-        userInfo.setmFavoritePlaces(sb.toString());
-        String userDetails = gson.toJson(userInfo);
-        mPrefEditor.putString(email,userDetails);
+        if (mStringBuilder != null) {
+            mStringBuilder.append(",");
+        }
+        mStringBuilder.append(placeId);
+        mUserInfo.setmFavoritePlaces(mStringBuilder.toString());
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(email, mDetailsJson);
         mPrefEditor.commit();
     }
 
@@ -379,12 +373,12 @@ public class UserManager {
      * @return
      */
     public Boolean checkFavorite(String email, String placeId) {
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        if (userInfo.getmFavoritePlaces() != null) {
-            String[] favs = userInfo.getmFavoritePlaces().split(",");
-            for (int i=0; i<favs.length; i++) {
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        if (mUserInfo.getmFavoritePlaces() != null) {
+            String[] favs = mUserInfo.getmFavoritePlaces().split(",");
+            int length = favs.length;
+            for (int i=0; i<length; i++) {
                 if (favs[i].equals(placeId)) {
                     return true;
                 }
@@ -400,50 +394,51 @@ public class UserManager {
      * @param placeId
      */
     public void removeFavorite(String email, String placeId) {
-        String detailsJson = mPreferences.getString(email,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        if (userInfo.getmFavoritePlaces() != null) {
-            String[] favs = userInfo.getmFavoritePlaces().split(",");
+        mDetailsJson = mPreferences.getString(email,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        if (mUserInfo.getmFavoritePlaces() != null) {
+            String[] favs = mUserInfo.getmFavoritePlaces().split(",");
             List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
-            for (int i=0; i<arrayList.size(); i++) {
+            int length = arrayList.size();
+            for (int i=0; i<length; i++) {
                 if (arrayList.get(i).length() == 0) {
                     arrayList.remove(i);
+                    length -= 1;
                 }
                 if (arrayList.get(i).equals(placeId)) {
                     arrayList.remove(placeId);
+                    length -= 1;
                 }
             }
+            StringBuilder mStringBuilder = new StringBuilder();
             favs = arrayList.toArray(new String[0]);
-            StringBuilder builder = new StringBuilder();
             for(String s : favs) {
-                builder.append(s + ",");
+                mStringBuilder.append(s + ",");
             }
-            userInfo.setmFavoritePlaces(builder.toString());
-            String userDetails = gson.toJson(userInfo);
-            mPrefEditor.putString(email,userDetails);
+            mUserInfo.setmFavoritePlaces(mStringBuilder.toString());
+            mDetailsJson = mGson.toJson(mUserInfo);
+            mPrefEditor.putString(email, mDetailsJson);
             mPrefEditor.commit();
         }
     }
 
     public void swapFavorites(int pos1, int pos2) {
-        String detailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        if (userInfo.getmFavoritePlaces() != null) {
-            String[] favs = userInfo.getmFavoritePlaces().split(",");
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        if (mUserInfo.getmFavoritePlaces() != null) {
+            String[] favs = mUserInfo.getmFavoritePlaces().split(",");
             List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
             Collections.swap(arrayList, pos1, pos2);
-            arrayList.add(pos2, arrayList.get(pos1));
-            arrayList.remove(pos1);
+            /*arrayList.add(pos2, arrayList.get(pos1));
+            arrayList.remove(pos1);*/
             favs = arrayList.toArray(new String[0]);
-            StringBuilder builder = new StringBuilder();
+            StringBuilder mStringBuilder = new StringBuilder();
             for(String s : favs) {
-                builder.append(s + ",");
+                mStringBuilder.append(s + ",");
             }
-            userInfo.setmFavoritePlaces(builder.toString());
-            String userDetails = gson.toJson(userInfo);
-            mPrefEditor.putString(mUserEmail,userDetails);
+            mUserInfo.setmFavoritePlaces(mStringBuilder.toString());
+            mDetailsJson = mGson.toJson(mUserInfo);
+            mPrefEditor.putString(mUserEmail, mDetailsJson);
             mPrefEditor.commit();
         }
     }
@@ -454,9 +449,31 @@ public class UserManager {
      * @return
      */
     public String getFavorite() {
-        String detailsJson = mPreferences.getString(mUserEmail,null);
-        Gson gson = new Gson();
-        UserInformation userInfo = gson.fromJson(detailsJson, UserInformation.class);
-        return userInfo.getmFavoritePlaces();
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        return mUserInfo.getmFavoritePlaces();
+    }
+
+    public String getFavoriteImages() {
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        return mUserInfo.getmFavoriteImages();
+    }
+
+    public void addFavoriteImage(String photoRef) {
+        mDetailsJson = mPreferences.getString(mUserEmail,null);
+        mUserInfo = mGson.fromJson(mDetailsJson, UserInformation.class);
+        StringBuilder mStringBuilder = new StringBuilder();
+        if (mUserInfo.getmFavoriteImages() != null) {
+            mStringBuilder.append(mUserInfo.getmFavoriteImages());
+        }
+        if (mStringBuilder != null) {
+            mStringBuilder.append(" ");
+        }
+        mStringBuilder.append(photoRef);
+        mUserInfo.setmFavoriteImages(mStringBuilder.toString());
+        mDetailsJson = mGson.toJson(mUserInfo);
+        mPrefEditor.putString(mUserEmail, mDetailsJson);
+        mPrefEditor.commit();
     }
 }

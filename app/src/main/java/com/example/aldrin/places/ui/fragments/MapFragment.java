@@ -45,6 +45,7 @@ import java.util.List;
  */
 public class MapFragment extends Fragment {
     private static final String TAG_ERROR = "error";
+    public static final int MARKER_COLOR = 173;
     private GoogleMap mGoogleMap;
     private LatLng mPosition;
     private GetFromJson mJsonResponse;
@@ -54,6 +55,7 @@ public class MapFragment extends Fragment {
     private UserManager mUserManager;
     private Bitmap smallMarker;
     private Boolean mIsRestaurant = true;
+    private Gson gson = new Gson();
 
     public MapFragment() {
         super();
@@ -83,7 +85,9 @@ public class MapFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        EventBus.getDefault().register(this);
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
     }
 
     @Override
@@ -166,17 +170,18 @@ public class MapFragment extends Fragment {
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
         List<Result> results = mJsonResponse.getResults();
         if (results != null) {
-            LatLng latLng;
-            for (int i = 0; i < results.size(); i++) {
+            int size = results.size();
+            MarkerOptions markerOptions = new MarkerOptions();
+            for (int i = 0; i < size; i++) {
                 Result venue = results.get(i);
                 Geometry geometry = venue.getGeometry();
                 String venueName = venue.getName();
                 com.example.aldrin.places.models.nearby.Location location = geometry.getLocation();
-                latLng = new LatLng(location.getLat(), location.getLng());
+                LatLng latLng = new LatLng(location.getLat(), location.getLng());
                 String venueDetails = gson.toJson(venue);
-                MarkerOptions marker = new MarkerOptions().position(latLng).snippet(venueDetails);
+                MarkerOptions marker = markerOptions.position(latLng).snippet(venueDetails);
                 /*mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.fromBitmap(smallMarker))).setTitle(venueName);*/
-                mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.defaultMarker(173))).setTitle(venueName);
+                mGoogleMap.addMarker(marker.icon(BitmapDescriptorFactory.defaultMarker(MARKER_COLOR))).setTitle(venueName);
             }
         }
     }
@@ -203,11 +208,11 @@ public class MapFragment extends Fragment {
 
         @Override
         public View getInfoContents(Marker marker) {
-            if (MapFragment.this.marker != null
+            /*if (MapFragment.this.marker != null
                     && MapFragment.this.marker.isInfoWindowShown()) {
                 MapFragment.this.marker.hideInfoWindow();
                 MapFragment.this.marker.showInfoWindow();
-            }
+            }*/
             return null;
         }
 
@@ -215,14 +220,15 @@ public class MapFragment extends Fragment {
         public View getInfoWindow(final Marker marker) {
             MapFragment.this.marker = marker;
             Result venue;
-            view = getLayoutInflater(null).inflate(R.layout.layout_card_location_details,
-                    null);
+            if (view == null) {
+                view = getLayoutInflater(null).inflate(R.layout.layout_card_location_details,
+                        null);
+            }
             try {
                 String venueDetails = marker.getSnippet();
                 if (venueDetails == null) {
                     return null;
                 }
-                Gson gson = new Gson();
                 venue = gson.fromJson(venueDetails, Result.class);
                 ImageView ivVenueIcon = (ImageView) view.findViewById(R.id.iv_venue_icon);
                 TextView tvTitle = (TextView) view.findViewById(R.id.tv_rest_name);
@@ -238,8 +244,6 @@ public class MapFragment extends Fragment {
                 ratingVenue.setRating(venue.getRating());
                 Picasso.with(mContext)
                         .load(venue.getIcon().toString())
-                        .placeholder(R.drawable.ic_image_placeholder)
-                        .error(R.drawable.image_no_image_available)
                         .into(ivVenueIcon);
             } catch (NullPointerException e) {
                 Log.e(TAG_ERROR, e.toString());

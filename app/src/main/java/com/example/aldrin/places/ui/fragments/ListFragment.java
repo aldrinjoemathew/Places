@@ -48,16 +48,18 @@ public class ListFragment extends Fragment {
     public static final String TAG = ListFragment.class.getSimpleName();
     private static final int NAVIGATE_UP_FROM_CHILD = 2;
     private UserManager mUserManager;
+    private String mUserEmail;
     private GetFromJson mJsonResponse;
     private List<Result> results;
     private Boolean mIsRestaurant = true;
     private Boolean mIsGrid = false;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private TextView tvFragmentTitle;
     private ImageView ivAddFavorite;
     private InternalStorage mSdCard;
     private Gson gson = new Gson();
+    private Intent placesDetailsIntent;
+    private Animation favAnimation;
 
     @BindView(R.id.tv_nothing_to_display)
     TextView tvNothingToDisplay;
@@ -74,6 +76,7 @@ public class ListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         mUserManager = new UserManager(getContext());
+        mUserEmail = mUserManager.getUserEmail();
         return inflater.inflate(R.layout.fragment_list, container, false);
     }
 
@@ -81,25 +84,24 @@ public class ListFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
-        tvFragmentTitle = (TextView) getActivity().findViewById(R.id.tv_fragment_title);
         mIsRestaurant = this.getArguments().getBoolean("isRestaurant");
         if (!mIsRestaurant) {
             String serviceName = this.getArguments().getString("service");
-            tvFragmentTitle.setText(serviceName);
         }
         mIsGrid = this.getArguments().getBoolean("isGrid");
         if (mUserManager.getNearbyResponse(mIsRestaurant) != null) {
             showCardList();
         }
+        placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
+        favAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.favorite);
         mRecyclerView.addOnItemTouchListener(listItemListener);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        EventBus.getDefault().register(this);
-        if (!mIsRestaurant) {
-            tvFragmentTitle.setVisibility(View.VISIBLE);
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
         }
     }
 
@@ -108,7 +110,6 @@ public class ListFragment extends Fragment {
         super.onStop();
         EventBus.getDefault().unregister(this);
         mUserManager.clearNearbyResponse();
-        tvFragmentTitle.setVisibility(View.GONE);
     }
 
     @Subscribe
@@ -126,7 +127,6 @@ public class ListFragment extends Fragment {
         @Override
         public void onItemClick(View view, int position) {
             String placeId = results.get(position).getPlace_id();
-            Intent placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
             placesDetailsIntent.putExtra("place_id", placeId);
             getActivity().startActivityForResult(placesDetailsIntent, NAVIGATE_UP_FROM_CHILD);
         }
@@ -140,17 +140,16 @@ public class ListFragment extends Fragment {
         public void onDoubleTap(View childView, int childAdapterPosition) {
             ivAddFavorite = (ImageView) childView.findViewById(R.id.iv_add_favorite);
             ivAddFavorite.setVisibility(View.VISIBLE);
-            Animation favAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.favorite);
             ivAddFavorite.startAnimation(favAnimation);
             ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
             ivAddFavorite.setVisibility(View.GONE);
             String placeId = results.get(childAdapterPosition).getPlace_id();
             mSdCard = new InternalStorage();
-            if (!mUserManager.checkFavorite(mUserManager.getUserEmail(), placeId)) {
-                mUserManager.addFavorite(mUserManager.getUserEmail(), placeId);
-                ivAddFavorite.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            if (!mUserManager.checkFavorite(mUserEmail, placeId)) {
+                mUserManager.addFavorite(mUserEmail, placeId);
                 String placeDetails = gson.toJson(results.get(childAdapterPosition));
-                mSdCard.addToSdCard(getContext(), "Favorites/" + mUserManager.getUserEmail(), placeId, placeDetails);
+                mSdCard.addToSdCard(getContext(),
+                        getString(R.string.favorites_path,mUserEmail), placeId, placeDetails);
             }
         }
 
@@ -187,7 +186,6 @@ public class ListFragment extends Fragment {
      */
     private List<Result> getLocationData() {
         String apiResponse = mUserManager.getNearbyResponse(mIsRestaurant);
-        Gson gson = new Gson();
         mJsonResponse = gson.fromJson(apiResponse, GetFromJson.class);
         return mJsonResponse.getResults();
     }

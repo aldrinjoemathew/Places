@@ -14,21 +14,29 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.events.ConfigurationChnagedEvent;
 import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
 import com.example.aldrin.places.helpers.CustomTextWatcher;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.UserInformation;
 import com.example.aldrin.places.ui.activities.UserhomeActivity;
+import com.squareup.picasso.Picasso;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.util.HashMap;
 
@@ -55,8 +63,6 @@ public class ProfileFragment extends Fragment {
 
     @BindView(R.id.button_submit)
     Button btnSubmitDetails;
-    @BindView(R.id.fab_change_image)
-    FloatingActionButton fabChangeImage;
     @BindView(R.id.tv_radius)
     TextView tvRadius;
     @BindView(R.id.email_et)
@@ -77,8 +83,8 @@ public class ProfileFragment extends Fragment {
     TextInputLayout layoutPhoneNumber;
     @BindView(R.id.seekbar_radius)
     SeekBar seekbarRadius;
-    @BindView(R.id.profile_image)
-    de.hdodenhof.circleimageview.CircleImageView imageViewProfile;
+    @BindView(R.id.iv_profile)
+    ImageView imageViewProfile;
 
     public static final String TAG = ProfileFragment.class.getSimpleName();
     public static ProfileFragment newInstance() {
@@ -108,6 +114,20 @@ public class ProfileFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
@@ -123,6 +143,8 @@ public class ProfileFragment extends Fragment {
         if (requestCode == MY_PERMISSIONS_READ_STORAGE) {
             if (grantResults.length > 0
                     && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startActivityForResult(new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
             } else {
 
             }
@@ -175,16 +197,22 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.fab_change_image)
+    @OnClick(R.id.iv_profile)
     void changeImage() {
         if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(),
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_READ_STORAGE);
+        } else {
+            startActivityForResult(new Intent(Intent.ACTION_PICK,
+                    android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
         }
-        startActivityForResult(new Intent(Intent.ACTION_PICK,
-                android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+    }
+
+    @Subscribe
+    public void onConfigurationChanged(ConfigurationChnagedEvent event) {
+        displayProfilePic();
     }
 
     SeekBar.OnSeekBarChangeListener radiusChanged = new SeekBar.OnSeekBarChangeListener() {
@@ -232,8 +260,20 @@ public class ProfileFragment extends Fragment {
                 ActivityCompat.requestPermissions(getActivity(),
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_READ_STORAGE);
+            } else {
+                DisplayMetrics displaymetrics = new DisplayMetrics();
+                ((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+                int width = displaymetrics.widthPixels;
+                Picasso.with(getContext())
+                        .load(profileImage)
+                        .centerCrop()
+                        .resize(width, (int) getResources().getDimension(R.dimen.image_height))
+                        .into(imageViewProfile);
+                /*Glide.with(this)
+                        .load(profileImage)
+                        .centerCrop()
+                        .into(imageViewProfile);*/
             }
-            imageViewProfile.setImageURI(profileImage);
         } catch (NullPointerException e) {
             Log.e(TAG_ERROR, e.toString());
         }

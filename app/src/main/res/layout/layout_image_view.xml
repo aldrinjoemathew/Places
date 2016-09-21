@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <ImageView
-            android:id="@+id/venue_image"
+            android:id="@+id/iv_venue"
             android:layout_width="match_parent"
             android:layout_height="@dimen/image_height"/>
         <LinearLayout
@@ -30,4 +30,11 @@
         android:layout_height="wrap_content"
         android:visibility="invisible"
         android:layout_gravity="center" />
+    <ImageView
+        android:id="@+id/iv_add_favorite_image"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_favorite"
+        android:visibility="invisible"/>
 </FrameLayout>
