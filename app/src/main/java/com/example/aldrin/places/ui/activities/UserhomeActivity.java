@@ -10,10 +10,12 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -26,8 +28,8 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
-import com.example.aldrin.places.events.ConfigurationChnagedEvent;
+import com.example.aldrin.places.events.LocationUpdatedEvent;
+import com.example.aldrin.places.events.ConfigurationChangedEvent;
 import com.example.aldrin.places.events.NavigationItemClickedEvent;
 import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
@@ -168,7 +170,7 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     public void onBackPressed() {
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {
-            mDrawer.closeDrawer(GravityCompat.START);
+            closeDrawer();
         } else if (getSupportFragmentManager().getBackStackEntryCount()>0) {
             super.onBackPressed();
         } else {
@@ -206,23 +208,33 @@ public class UserhomeActivity extends AppCompatActivity
         if (id == R.id.nav_nearby_places) {
             fragmentTransaction
                     .replace(R.id.content_frame,
-                            NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG).commit();
+                            NearbyPlacesFragment.newInstance(), NearbyPlacesFragment.TAG)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         } else if (id == R.id.nav_fav_places) {
             fragmentTransaction
                     .replace(R.id.content_frame,
-                            FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG).commit();
+                            FavouritePlacesFragment.newInstance(), FavouritePlacesFragment.TAG)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         } else if (id == R.id.nav_find_service) {
             fragmentTransaction
                     .replace(R.id.content_frame,
-                            ServicesFragment.newInstance(), ServicesFragment.TAG).commit();
+                            ServicesFragment.newInstance(), ServicesFragment.TAG)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         } else if (id == R.id.nav_profile) {
             fragmentTransaction
                     .replace(R.id.content_frame,
-                            ProfileFragment.newInstance(), ProfileFragment.TAG).commit();
+                            ProfileFragment.newInstance(), ProfileFragment.TAG)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         } else if (id == R.id.nav_gallery) {
             fragmentTransaction
                     .replace(R.id.content_frame,
-                            GalleryGridFragment.newInstance(), GalleryGridFragment.TAG).commit();
+                            GalleryGridFragment.newInstance(), GalleryGridFragment.TAG)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         } else if (id == R.id.nav_logout) {
             mUserManager.logoutUser();
         }
@@ -261,7 +273,7 @@ public class UserhomeActivity extends AppCompatActivity
             getLastLocation();
         } else if (mLastLocation.distanceTo(mCurrentLocation) > 50) {
             getNearbyRestaurants();
-        } else if (mUserManager.getNearbyResponse(mIsRestaurant) == null) {
+        } else if (mUserManager.getNearbyResponse(mIsRestaurant).isEmpty()) {
             getNearbyRestaurants();
         }
     }
@@ -269,7 +281,7 @@ public class UserhomeActivity extends AppCompatActivity
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        EventBus.getDefault().post(new ConfigurationChnagedEvent());
+        EventBus.getDefault().post(new ConfigurationChangedEvent());
     }
 
     @Override
@@ -409,6 +421,9 @@ public class UserhomeActivity extends AppCompatActivity
         mCallback = service.getNearbyServices(mGooglePlacesWebKey, serviceType, searchValue,
                         location, radius);
         mCallback.enqueue(startBackgroundThread);
+        mCallback = service.getNearbyServices(mGooglePlacesWebKey, UserManager.serviceType, UserManager.searchValue,
+                location, radius);
+        mCallback.enqueue(startServiceThread);
     }
 
     Callback<GetFromJson> startBackgroundThread = new Callback<GetFromJson>() {
@@ -417,7 +432,7 @@ public class UserhomeActivity extends AppCompatActivity
             Gson gson = new Gson();
             String apiResult = gson.toJson(response.body());
             mUserManager.updateNearbyResponse(true, apiResult);
-            EventBus.getDefault().post(new ApiResponseUpdatedEvent(null));
+            EventBus.getDefault().post(new LocationUpdatedEvent(null));
         }
 
         @Override
@@ -426,6 +441,20 @@ public class UserhomeActivity extends AppCompatActivity
         }
     };
 
+    Callback<GetFromJson> startServiceThread = new Callback<GetFromJson>() {
+        @Override
+        public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
+            Gson gson = new Gson();
+            String apiResult = gson.toJson(response.body());
+            mUserManager.updateNearbyResponse(false, apiResult);
+            EventBus.getDefault().post(new LocationUpdatedEvent(null));
+        }
+
+        @Override
+        public void onFailure(Call<GetFromJson> call, Throwable t) {
+            Log.e(TAG_ERROR, t.toString());
+        }
+    };
 
     /**
      * Method to display user's profile image.

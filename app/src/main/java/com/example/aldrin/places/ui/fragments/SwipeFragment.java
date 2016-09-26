@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
 import com.example.aldrin.places.R;
 import com.squareup.picasso.Picasso;
 
@@ -54,8 +53,5 @@ public class SwipeFragment extends Fragment{
         Picasso.with(getContext())
                 .load(url)
                 .into(imgRestaurant);
-        /*Glide.with(getContext())
-                .load(url)
-                .into(imgRestaurant);*/
     }
 }

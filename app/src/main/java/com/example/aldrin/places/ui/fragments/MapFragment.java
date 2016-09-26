@@ -16,7 +16,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.LocationUpdatedEvent;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.nearby.Geometry;
 import com.example.aldrin.places.models.nearby.GetFromJson;
@@ -105,7 +105,7 @@ public class MapFragment extends Fragment {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onLocationUpdateEvent(ApiResponseUpdatedEvent event) {
+    public void onLocationUpdateEvent(LocationUpdatedEvent event) {
             updateMap();
     }
 

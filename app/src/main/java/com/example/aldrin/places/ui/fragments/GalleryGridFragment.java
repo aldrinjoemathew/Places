@@ -2,7 +2,6 @@ package com.example.aldrin.places.ui.fragments;
 
 
 import android.os.Bundle;
-import android.os.storage.StorageManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
@@ -16,8 +15,7 @@ import android.view.ViewGroup;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.ImageAdapter;
-import com.example.aldrin.places.events.ConfigurationChnagedEvent;
-import com.example.aldrin.places.helpers.InternalStorage;
+import com.example.aldrin.places.events.ConfigurationChangedEvent;
 import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.UserManager;
 
@@ -89,7 +87,7 @@ public class GalleryGridFragment extends Fragment {
     }
 
     @Subscribe
-    public void onConfigurationChanged(ConfigurationChnagedEvent event) {
+    public void onConfigurationChanged(ConfigurationChangedEvent event) {
         showGallery();
     }
 
@@ -113,10 +111,6 @@ public class GalleryGridFragment extends Fragment {
 
                 @Override
                 public void onDoubleTap(View childView, int childAdapterPosition) {
-                }
-
-                @Override
-                public void onFling(View childView1, View childView2, int pos1, int pos2) {
                 }
             });
 

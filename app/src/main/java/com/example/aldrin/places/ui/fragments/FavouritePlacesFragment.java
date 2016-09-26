@@ -25,6 +25,7 @@ import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.placesdetails.Result;
 import com.example.aldrin.places.ui.activities.PlaceDetailsActivity;
+import com.example.aldrin.places.ui.activities.PlacesDetailsActivity;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -56,7 +57,6 @@ public class FavouritePlacesFragment extends Fragment {
     private Boolean mLongClickEnabled = false;
     private Boolean mDragEnabled = false;
     private Result venue;
-    private String placeId;
     private Intent placesDetailsIntent;
     private Animation lonClickAnimation;
     private Handler handler = new Handler();
@@ -103,12 +103,18 @@ public class FavouritePlacesFragment extends Fragment {
         getFavoritesFromSdCard();
         displayFavorites();
         mRecyclerView.addOnItemTouchListener(onFavoriteClickListener);
-        placesDetailsIntent = new Intent(getContext(), PlaceDetailsActivity.class);
+        placesDetailsIntent = new Intent(getContext(), PlacesDetailsActivity.class);
         lonClickAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.long_click);
         ItemTouchHelper itemTouch = new ItemTouchHelper(ithCallback);
         itemTouch.attachToRecyclerView(mRecyclerView);
     }
 
+    /**
+     * The callback recieved on recycler item touch is used to manage
+     * dragging and swiping actions on recycler item views.
+     * On dragging cards are interchanged.
+     * On swiping cards are deleted from recycler view.
+     */
     ItemTouchHelper.Callback ithCallback = new ItemTouchHelper.Callback() {
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
@@ -118,13 +124,12 @@ public class FavouritePlacesFragment extends Fragment {
         }
 
         @Override
-        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+        public boolean onMove(RecyclerView recyclerView,
+                              RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
             mDragEnabled = true;
             int pos1 = viewHolder.getAdapterPosition();
             int pos2 = target.getAdapterPosition();
             Collections.swap(cardVenueList, pos1, pos2);
-            /*cardVenueList.add(pos2, cardVenueList.get(pos1));
-            cardVenueList.remove(pos1);*/
             mAdapter.notifyItemMoved(pos1, pos2);
             mUserManager.swapFavorites(pos1, pos2);
             return true;
@@ -136,13 +141,21 @@ public class FavouritePlacesFragment extends Fragment {
             String placeId = cardVenueList.get(pos).getPlace_id();
             if (mUserManager.checkFavorite(mUserEmail, placeId)) {
                 mUserManager.removeFavorite(mUserEmail, placeId);
-                mFileStorage.removeFromSdCard(getContext(), getString(R.string.favorites_path,mUserEmail), placeId);
+                mFileStorage.removeFromSdCard(getContext(),
+                        getString(R.string.favorites_path,mUserEmail), placeId);
             }
             cardVenueList.remove(pos);
             mAdapter.notifyItemRemoved(pos);
         }
     };
 
+    /**
+     * If a favorite place is marked not favorite from PlaceDetails activity
+     * it is deleted from the recycler view.
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -150,17 +163,16 @@ public class FavouritePlacesFragment extends Fragment {
             if(resultCode == Activity.RESULT_OK){
                 Boolean changed = data.getBooleanExtra("valueChanged", false);
                 if (changed) {
-                    mRecyclerView.removeAllViews();
-                    FavoritePlacesAdapter fav = (FavoritePlacesAdapter) mRecyclerView.getAdapter();
-                    fav.clearData();
-                    getFavoritesFromSdCard();
-                    displayFavorites();
+                    int pos = data.getIntExtra("pos", 0);
+                    cardVenueList.remove(pos);
+                    mAdapter.notifyItemRemoved(pos);
                 }
             }
         }
     }
 
-    RecyclerView.OnItemTouchListener onFavoriteClickListener = new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
+    RecyclerView.OnItemTouchListener onFavoriteClickListener =
+            new RecyclerClickListener(getContext(), new RecyclerClickListener.OnItemTouchListener() {
         @Override
         public void onItemClick(View view, int position) {
             if (mLongClickEnabled) {
@@ -179,8 +191,9 @@ public class FavouritePlacesFragment extends Fragment {
                 }
             } else {
                 venue = cardVenueList.get(position);
-                placeId = venue.getPlace_id();
+                String placeId = venue.getPlace_id();
                 placesDetailsIntent.putExtra("place_id", placeId);
+                placesDetailsIntent.putExtra("pos", position);
                 getActivity().startActivityForResult(placesDetailsIntent, NAVIGATE_UP_FROM_CHILD);
             }
         }
@@ -208,17 +221,6 @@ public class FavouritePlacesFragment extends Fragment {
         @Override
         public void onDoubleTap(View childView, int childAdapterPosition) {
 
-        }
-
-        @Override
-        public void onFling(View childView1, View childView2, int pos1, int pos2) {
-            /*if (!mLongClickEnabled) {
-                Collections.swap(cardVenueList, pos1, pos2);
-                cardVenueList.add(pos2, cardVenueList.get(pos1));
-                cardVenueList.remove(pos1);
-                mAdapter.notifyDataSetChanged();
-                mUserManager.swapFavorites(pos1, pos2);
-            }*/
         }
     });
 

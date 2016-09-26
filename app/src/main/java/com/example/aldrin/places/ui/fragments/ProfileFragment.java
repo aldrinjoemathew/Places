@@ -10,7 +10,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -25,10 +24,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
 import com.example.aldrin.places.R;
-import com.example.aldrin.places.events.ConfigurationChnagedEvent;
-import com.example.aldrin.places.events.ProfileImageUpdatedEvent;
+import com.example.aldrin.places.events.ConfigurationChangedEvent;
 import com.example.aldrin.places.helpers.CustomTextWatcher;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.models.UserInformation;
@@ -211,7 +208,7 @@ public class ProfileFragment extends Fragment {
     }
 
     @Subscribe
-    public void onConfigurationChanged(ConfigurationChnagedEvent event) {
+    public void onConfigurationChanged(ConfigurationChangedEvent event) {
         displayProfilePic();
     }
 

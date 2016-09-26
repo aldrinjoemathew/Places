@@ -43,12 +43,10 @@
             android:name=".ui.activities.UserhomeActivity"
             android:label="@string/title_activity_userhome"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@style/AppTheme"
-            android:launchMode="singleTop"/>
+            android:theme="@style/AppTheme"/>
         <activity
             android:name=".ui.activities.PlacesDetailsActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:launchMode="singleInstance"/>
+            android:configChanges="orientation|keyboardHidden|screenSize"/>
         <activity
             android:name=".ui.activities.PlaceDetailsActivity"
             android:launchMode="singleInstance"/>

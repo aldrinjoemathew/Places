@@ -2,6 +2,8 @@ package com.example.aldrin.places.helpers;
 
 import android.app.Application;
 
+import com.raizlabs.android.dbflow.config.FlowConfig;
+import com.raizlabs.android.dbflow.config.FlowManager;
 import com.squareup.picasso.OkHttpDownloader;
 import com.squareup.picasso.Picasso;
 
@@ -18,5 +20,7 @@ public class ApplicationClassCustomDefinition extends Application {
         builder.downloader(new OkHttpDownloader(this,Integer.MAX_VALUE));
         Picasso built = builder.build();
         Picasso.setSingletonInstance(built);
+
+        FlowManager.init(new FlowConfig.Builder(this).build());
     }
 }

@@ -47,6 +47,8 @@ public class UserManager {
     private SharedPreferences mPreferences;
     private SharedPreferences.Editor mPrefEditor;
     private Context mContext;
+    public static String serviceType;
+    public static String searchValue;
 
     public UserManager(Context context) {
         mContext = context;
@@ -429,8 +431,6 @@ public class UserManager {
             String[] favs = mUserInfo.getmFavoritePlaces().split(",");
             List<String> arrayList = new LinkedList<String>(Arrays.asList(favs));
             Collections.swap(arrayList, pos1, pos2);
-            /*arrayList.add(pos2, arrayList.get(pos1));
-            arrayList.remove(pos1);*/
             favs = arrayList.toArray(new String[0]);
             StringBuilder mStringBuilder = new StringBuilder();
             for(String s : favs) {

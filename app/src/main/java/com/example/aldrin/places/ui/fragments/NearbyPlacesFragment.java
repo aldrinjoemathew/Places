@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.PagerAdapter;
+import com.example.aldrin.places.helpers.UserManager;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -24,8 +25,9 @@ import com.example.aldrin.places.adapters.PagerAdapter;
 public class NearbyPlacesFragment extends Fragment {
 
     public static final String TAG = NearbyPlacesFragment.class.getSimpleName();
-    PagerAdapter mSectionsPagerAdapter;
-    ViewPager mViewPager;
+    private PagerAdapter mSectionsPagerAdapter;
+    private ViewPager mViewPager;
+    private UserManager mUserManager;
 
     public static NearbyPlacesFragment newInstance() {
         return new NearbyPlacesFragment();
@@ -38,6 +40,7 @@ public class NearbyPlacesFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mUserManager = new UserManager(getContext());
     }
 
     @Override

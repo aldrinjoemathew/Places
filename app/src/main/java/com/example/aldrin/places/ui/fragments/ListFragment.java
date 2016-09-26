@@ -20,8 +20,9 @@ import android.widget.TextView;
 
 import com.example.aldrin.places.R;
 import com.example.aldrin.places.adapters.CardListAdapter;
-import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.LocationUpdatedEvent;
 import com.example.aldrin.places.events.NavigationItemClickedEvent;
+import com.example.aldrin.places.events.ServiceResponseUpdatedEvent;
 import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.InternalStorage;
 import com.example.aldrin.places.helpers.UserManager;
@@ -118,7 +119,13 @@ public class ListFragment extends Fragment {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onLocationUpdateEvent(ApiResponseUpdatedEvent event) {
+    public void onLocationUpdateEvent(LocationUpdatedEvent event) {
+
+        showCardList();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onServiceResponseUpdated(ServiceResponseUpdatedEvent event) {
         showCardList();
     }
 
@@ -151,11 +158,6 @@ public class ListFragment extends Fragment {
                 mSdCard.addToSdCard(getContext(),
                         getString(R.string.favorites_path,mUserEmail), placeId, placeDetails);
             }
-        }
-
-        @Override
-        public void onFling(View childView1, View childView2, int pos1, int pos2) {
-
         }
     });
 

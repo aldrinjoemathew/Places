@@ -141,6 +141,7 @@ public class PlacesDetailsActivity extends AppCompatActivity{
             if (mIsFavorite != mUserManager.checkFavorite(mUserManager.getUserEmail(),
                     mPlacesDetails.getPlace_id())) {
                 intent.putExtra("valueChanged",true);
+                intent.putExtra("pos", getIntent().getIntExtra("pos", 0));
             }
         } catch (NullPointerException e) {
         }
@@ -260,10 +261,6 @@ public class PlacesDetailsActivity extends AppCompatActivity{
                     .fit()
                     .centerCrop()
                     .into(ivRestaurant);
-            /*Glide.with(this)
-                    .load(imageUrl)
-                    .centerCrop()
-                    .into(ivRestaurant);*/
         } catch (NullPointerException e) {
             mImageProgressBar.setVisibility(View.GONE);
             ivRestaurant.setImageBitmap(BitmapFactory.decodeResource(getResources(),

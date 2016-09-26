@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -13,13 +14,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.AutoCompleteTextView;
 
 import com.example.aldrin.places.R;
+import com.example.aldrin.places.adapters.AutoCompleteAdapter;
 import com.example.aldrin.places.adapters.ServicesListAdapter;
-import com.example.aldrin.places.events.ApiResponseUpdatedEvent;
+import com.example.aldrin.places.events.ServiceResponseUpdatedEvent;
 import com.example.aldrin.places.helpers.RecyclerClickListener;
 import com.example.aldrin.places.helpers.UserManager;
 import com.example.aldrin.places.interfaces.ApiInterface;
@@ -69,6 +69,9 @@ public class ServicesFragment extends Fragment {
     @BindString(R.string.google_places_web_key)
     String mGooglePlacesWebKey;
 
+    @BindView(R.id.actv_search)
+    AutoCompleteTextView actvSearch;
+
     public static Fragment newInstance() {
         return new ServicesFragment();
     }
@@ -84,12 +87,17 @@ public class ServicesFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mUserManager = new UserManager(getContext());
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
         initializeRecyclerView();
         mSearchService.setIconified(false);
-        mUserManager = new UserManager(getContext());
         String[] serviceTypes = getString(R.string.services).split(",");
         mServiceTypes = new LinkedList<String>(Arrays.asList(serviceTypes));
         mRecyclerView.addOnItemTouchListener(startBackgroundThread);
@@ -97,6 +105,7 @@ public class ServicesFragment extends Fragment {
                 .baseUrl(mGoogleApiBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
+        actvSearch.setAdapter(new AutoCompleteAdapter(getContext(), R.layout.layout_list_item));
     }
 
     @Override
@@ -118,8 +127,10 @@ public class ServicesFragment extends Fragment {
         @Override
         public void onItemClick(View view, int position) {
             String searchValue = mSearchService.getQuery().toString();
+            String serviceType = mServiceTypes.get(position);
             if (!searchValue.isEmpty()) {
-                String serviceType = mServiceTypes.get(position);
+                UserManager.serviceType = serviceType;
+                UserManager.searchValue = searchValue;
                 String loc[] = mUserManager.getLocation();
                 String location = loc[0] + "," + loc[1];
                 String radius = mUserManager.getSearchRadius();
@@ -131,6 +142,8 @@ public class ServicesFragment extends Fragment {
                 android.support.v4.app.FragmentTransaction fragmentTransaction =
                         getActivity().getSupportFragmentManager()
                                 .beginTransaction();
+                /*fragmentTransaction.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right);*/
+                fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
                 fragmentTransaction.addToBackStack(null);
                 String serviceName = mServiceTypeTitles.get(position);
                 bundle.putBoolean("isRestaurant", isRestaurant);
@@ -158,10 +171,6 @@ public class ServicesFragment extends Fragment {
         @Override
         public void onDoubleTap(View childView, int childAdapterPosition) {
         }
-
-        @Override
-        public void onFling(View childView1, View childView2, int pos1, int pos2) {
-        }
     });
 
     /**
@@ -173,7 +182,7 @@ public class ServicesFragment extends Fragment {
         public void onResponse(Call<GetFromJson> call, Response<GetFromJson> response) {
             String apiResult = gson.toJson(response.body());
             mUserManager.updateNearbyResponse(false, apiResult);
-            EventBus.getDefault().post(new ApiResponseUpdatedEvent(null));
+            EventBus.getDefault().post(new ServiceResponseUpdatedEvent());
         }
 
         @Override
